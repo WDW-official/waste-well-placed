@@ -1,0 +1,1 @@
+import {getSession,isStaff} from "@/lib/auth";import {redirect} from "next/navigation";export default async function Layout({children}:{children:React.ReactNode}){const u=await getSession();if(!u)redirect("/login");if(!isStaff(u.role))redirect("/account");return children}

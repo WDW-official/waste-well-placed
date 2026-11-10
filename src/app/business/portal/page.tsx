@@ -1,0 +1,1 @@
+import {PageTitle} from "@/components/page-title";import Link from "next/link";export default function Portal(){return <><PageTitle title="Business collection portal" desc="Manage linked sites, collection history and records from one workspace."/><div className="container section"><Link href="/portal" className="btn btn-primary">Go to business portal</Link></div></>}

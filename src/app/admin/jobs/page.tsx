@@ -1,0 +1,1 @@
+import {AdminResource} from "@/components/admin-resource";export default function Page(){return <AdminResource title='Collection jobs' name='bookings' fields={['reference', 'status', 'paymentStatus', 'scheduledAt', 'assignedCrewId']} editable={true}/>}

@@ -1,0 +1,1 @@
+import {AdminResource} from "@/components/admin-resource";export default function Page(){return <AdminResource title='Published content' name='posts' fields={['slug', 'title', 'published']} editable={true}/>}

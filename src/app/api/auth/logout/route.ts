@@ -1,0 +1,1 @@
+import {logout} from "@/lib/auth";import {ok,fail,ensureSameOrigin} from "@/lib/http";export async function POST(req:Request){if(!ensureSameOrigin(req))return fail("Invalid origin",403);await logout();return ok({ok:true})}

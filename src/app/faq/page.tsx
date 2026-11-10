@@ -1,0 +1,1 @@
+import {PageTitle} from "@/components/page-title";import {FAQ} from "@/components/faq";import {DEFAULT_FAQS} from "@/lib/constants";export const metadata={title:"FAQs"};export default function Page(){return <><PageTitle title="Frequently asked questions"/><div className="container max-w-4xl section"><FAQ items={DEFAULT_FAQS}/></div></>}
