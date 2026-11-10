@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { Select } from "@/components/select";
 import { DashLayout } from "@/components/dash-layout";
 import { adminLinks } from "@/lib/admin-links";
 import { toast } from "sonner";
@@ -107,25 +108,22 @@ export function AdminResource({
                 ))}
                 {editable && (
                   <td>
-                    <select
+                    <Select
                       aria-label="Select field to edit"
-                      className="input !min-h-9"
+                      className="!min-h-9"
                       value=""
-                      onChange={(e) => {
-                        if (e.target.value) edit(r, e.target.value);
+                      placeholder="Edit field…"
+                      onValueChange={(field) => {
+                        if (field) void edit(r, field);
                       }}
-                    >
-                      <option value="">Edit field…</option>
-                      {fields
+                      options={fields
                         .filter(
-                          (f) => !f.startsWith("_") && !f.includes("password"),
+                          (field) =>
+                            !field.startsWith("_") &&
+                            !field.includes("password"),
                         )
-                        .map((f) => (
-                          <option key={f} value={f}>
-                            {f}
-                          </option>
-                        ))}
-                    </select>
+                        .map((field) => ({ value: field, label: field }))}
+                    />
                   </td>
                 )}
               </tr>

@@ -11,6 +11,7 @@ import {
   ArrowRight,
   Check,
 } from "lucide-react";
+import { Select } from "@/components/select";
 import { toast } from "sonner";
 
 const tabs = [
@@ -117,27 +118,25 @@ export function HeroBooking() {
             <CalendarDays aria-hidden="true" />
             <div>
               <label htmlFor="hero-date">When do you need it?</label>
-              <select
+              <Select
                 id="hero-date"
+                variant="plain"
                 disabled={busy}
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
-              >
-                <option value="">As soon as possible</option>
-                {[
-                  { days: 1, title: "Tomorrow" },
-                  { days: 3, title: "In the next few days" },
-                  { days: 7, title: "In a week or more" },
-                ].map(({ days, title }) => {
-                  const day = new Date();
-                  day.setDate(day.getDate() + days);
-                  return (
-                    <option key={days} value={day.toLocaleDateString("en-CA")}>
-                      {title}
-                    </option>
-                  );
-                })}
-              </select>
+                onValueChange={setDate}
+                options={[
+                  { value: "", label: "As soon as possible" },
+                  ...[
+                    { days: 1, label: "Tomorrow" },
+                    { days: 3, label: "In the next few days" },
+                    { days: 7, label: "In a week or more" },
+                  ].map(({ days, label }) => {
+                    const day = new Date();
+                    day.setDate(day.getDate() + days);
+                    return { value: day.toLocaleDateString("en-CA"), label };
+                  }),
+                ]}
+              />
             </div>
           </div>
           <button

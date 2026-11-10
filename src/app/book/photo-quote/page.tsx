@@ -17,6 +17,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { request, loadDraft } from "@/lib/booking-client";
+import { Select } from "@/components/select";
 import { toast } from "sonner";
 
 type Photo = { publicId: string; secureUrl: string };
@@ -414,18 +415,21 @@ export default function PhotoQuote() {
                     <label className="request-label" htmlFor="quote-property">
                       Property type
                     </label>
-                    <select
+                    <Select
                       id="quote-property"
-                      className="input"
                       value={form.propertyType}
-                      onChange={(e) => update("propertyType", e.target.value)}
-                    >
-                      <option value="">Select property type</option>
-                      <option value="house">House</option>
-                      <option value="flat">Flat / apartment</option>
-                      <option value="office">Office / business premises</option>
-                      <option value="other">Other</option>
-                    </select>
+                      onValueChange={(value) => update("propertyType", value)}
+                      options={[
+                        { value: "", label: "Select property type" },
+                        { value: "house", label: "House" },
+                        { value: "flat", label: "Flat / apartment" },
+                        {
+                          value: "office",
+                          label: "Office / business premises",
+                        },
+                        { value: "other", label: "Other" },
+                      ]}
+                    />
                   </div>
                   <div className="md:col-span-2">
                     <label className="request-label" htmlFor="quote-street">
