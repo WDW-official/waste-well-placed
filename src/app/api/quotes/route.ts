@@ -1,2 +1,50 @@
-import {quoteRequestSchema} from "@/lib/validation";import {connectDB} from "@/lib/db";import {Quote,Audit} from "@/lib/models";import {newRef} from "@/lib/utils";import {ok,errorResponse,fail,ensureSameOrigin} from "@/lib/http";import {sendEmail,emailSafe} from "@/lib/notifications";import {getSession} from "@/lib/auth";
-export async function POST(req:Request){if(!ensureSameOrigin(req))return fail("Invalid origin",403);try{const payload=quoteRequestSchema.parse(await req.json());await connectDB();const session=await getSession();const reference=newRef("QUOTE");const quote=await Quote.create({reference,ownerId:session?.id||undefined,customer:{name:payload.name,email:payload.email,phone:payload.phone},kind:"photo",address:payload.address,details:{type:payload.type,notes:payload.notes,timing:payload.timing,collectionDetails:payload.collectionDetails},photos:payload.photos,status:"new",events:[{action:"submitted",at:new Date()}]});await Audit.create({actorId:session?.id||"guest",action:"quote.created",entity:"quote",entityId:String(quote._id)});void sendEmail(payload.email,"Waste Well Placed quote received",`<p>Thank you ${emailSafe(payload.name||"for getting in touch")}. Your quote reference is <strong>${reference}</strong>.</p>`).catch(console.error);return ok({reference},201)}catch(e){return errorResponse(e)}}
+import { quoteRequestSchema } from "@/lib/validation";
+import { connectDB } from "@/lib/db";
+import { Quote, Audit } from "@/lib/models";
+import { newRef } from "@/lib/utils";
+import { ok, errorResponse, fail, ensureSameOrigin } from "@/lib/http";
+import { sendEmail, emailSafe } from "@/lib/notifications";
+import { getSession } from "@/lib/auth";
+export async function POST(req: Request) {
+  if (!ensureSameOrigin(req)) return fail("Invalid origin", 403);
+  try {
+    const payload = quoteRequestSchema.parse(await req.json());
+    await connectDB();
+    const session = await getSession();
+    const reference = newRef("QUOTE");
+    const quote = await Quote.create({
+      reference,
+      ownerId: session?.id || undefined,
+      customer: {
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+      },
+      kind: "photo",
+      address: payload.address,
+      details: {
+        type: payload.type,
+        notes: payload.notes,
+        timing: payload.timing,
+        collectionDetails: payload.collectionDetails,
+      },
+      photos: payload.photos,
+      status: "new",
+      events: [{ action: "submitted", at: new Date() }],
+    });
+    await Audit.create({
+      actorId: session?.id || "guest",
+      action: "quote.created",
+      entity: "quote",
+      entityId: String(quote._id),
+    });
+    void sendEmail(
+      payload.email,
+      "Waste Well Placed quote received",
+      `<p>Thank you ${emailSafe(payload.name || "for getting in touch")}. Your quote reference is <strong>${reference}</strong>.</p>`,
+    ).catch(console.error);
+    return ok({ reference }, 201);
+  } catch (e) {
+    return errorResponse(e);
+  }
+}

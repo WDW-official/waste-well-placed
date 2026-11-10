@@ -1,1 +1,24 @@
-import {estimateSchema} from "@/lib/validation";import {findZone} from "@/lib/coverage";import {priceEstimate} from "@/lib/pricing";import {ok,errorResponse,fail,ensureSameOrigin} from "@/lib/http";export async function POST(req:Request){if(!ensureSameOrigin(req))return fail("Invalid origin",403);try{const payload=estimateSchema.parse(await req.json());const zone=await findZone(payload.postcode);if(!zone)return fail("This postcode is not in our current service area",422);if(payload.specialHandling)return fail("Special handling requires a manual quote; please use photo quote",422);const estimate=priceEstimate(payload,zone.surchargeMinor);return ok({estimate,zone:{id:String(zone._id),name:zone.name}})}catch(e){if(e instanceof Error&&e.message.startsWith("Unknown"))return fail(e.message,422);return errorResponse(e)}}
+import { estimateSchema } from "@/lib/validation";
+import { findZone } from "@/lib/coverage";
+import { priceEstimate } from "@/lib/pricing";
+import { ok, errorResponse, fail, ensureSameOrigin } from "@/lib/http";
+export async function POST(req: Request) {
+  if (!ensureSameOrigin(req)) return fail("Invalid origin", 403);
+  try {
+    const payload = estimateSchema.parse(await req.json());
+    const zone = await findZone(payload.postcode);
+    if (!zone)
+      return fail("This postcode is not in our current service area", 422);
+    if (payload.specialHandling)
+      return fail(
+        "Special handling requires a manual quote; please use photo quote",
+        422,
+      );
+    const estimate = priceEstimate(payload, zone.surchargeMinor);
+    return ok({ estimate, zone: { id: String(zone._id), name: zone.name } });
+  } catch (e) {
+    if (e instanceof Error && e.message.startsWith("Unknown"))
+      return fail(e.message, 422);
+    return errorResponse(e);
+  }
+}

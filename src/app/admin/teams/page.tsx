@@ -1,1 +1,11 @@
-import {AdminResource} from "@/components/admin-resource";export default function Page(){return <AdminResource title='Team directory' name='users' fields={['name', 'email', 'role']} editable={false}/>}
+import { AdminResource } from "@/components/admin-resource";
+export default function Page() {
+  return (
+    <AdminResource
+      title="Team directory"
+      name="users"
+      fields={["name", "email", "role"]}
+      editable={false}
+    />
+  );
+}

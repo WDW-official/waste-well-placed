@@ -1,1 +1,22 @@
-import {connectDB} from "@/lib/db";import {Post} from "@/lib/models";import {notFound} from "next/navigation";import {PageTitle} from "@/components/page-title";export default async function Article({params}:{params:Promise<{slug:string}>}){const {slug}=await params;await connectDB();const post=await Post.findOne({slug,published:true}).lean();if(!post)notFound();return <><PageTitle title={post.title}/><article className="article section px-6 whitespace-pre-line">{post.body}</article></>}
+import { connectDB } from "@/lib/db";
+import { Post } from "@/lib/models";
+import { notFound } from "next/navigation";
+import { PageTitle } from "@/components/page-title";
+export default async function Article({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  await connectDB();
+  const post = await Post.findOne({ slug, published: true }).lean();
+  if (!post) notFound();
+  return (
+    <>
+      <PageTitle title={post.title ?? "Waste advice"} />
+      <article className="article section px-6 whitespace-pre-line">
+        {post.body}
+      </article>
+    </>
+  );
+}

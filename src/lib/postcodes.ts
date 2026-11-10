@@ -13,7 +13,10 @@ const lookupResponse = z.object({
 });
 
 export class PostcodeLookupError extends Error {
-  constructor(message: string, public readonly status: number) {
+  constructor(
+    message: string,
+    public readonly status: number,
+  ) {
     super(message);
     this.name = "PostcodeLookupError";
   }
@@ -27,7 +30,10 @@ export async function lookupPostcode(raw: string) {
       { signal: AbortSignal.timeout(5000), next: { revalidate: 86400 } },
     );
     if (response.status === 404) {
-      throw new PostcodeLookupError("Postcode not found. Check your UK postcode and try again.", 422);
+      throw new PostcodeLookupError(
+        "Postcode not found. Check your UK postcode and try again.",
+        422,
+      );
     }
     if (!response.ok) throw new Error("Postcode service unavailable");
     const { result } = lookupResponse.parse(await response.json());
@@ -40,6 +46,9 @@ export async function lookupPostcode(raw: string) {
     };
   } catch (error) {
     if (error instanceof PostcodeLookupError) throw error;
-    throw new PostcodeLookupError("Postcode lookup is temporarily unavailable. Please try again shortly.", 503);
+    throw new PostcodeLookupError(
+      "Postcode lookup is temporarily unavailable. Please try again shortly.",
+      503,
+    );
   }
 }

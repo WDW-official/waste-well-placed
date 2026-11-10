@@ -42,14 +42,14 @@ Postcode verification uses [Postcodes.io](https://postcodes.io/docs/overview/), 
 
 ## Routes
 
-| Area | Routes |
-| --- | --- |
-| Public | `/`, `/services`, `/services/[slug]`, `/how-it-works`, `/areas`, `/areas/[slug]`, `/about`, `/contact`, `/faq`, `/reviews`, `/blog`, `/blog/[slug]`, `/terms`, `/privacy` |
-| Booking | `/book`, `/book/load`, `/book/items`, `/book/photo-quote`, `/book/details`, `/book/schedule`, `/book/checkout`, `/book/confirmation/[ref]`, `/book/quote-received` |
-| Customer | `/login`, `/register`, `/forgot-password`, `/account`, `/account/bookings`, `/account/bookings/[id]`, `/account/documents`, `/account/profile` |
-| Business | `/business`, `/business/services`, `/business/portal`, `/business/enquire`, `/portal`, `/portal/sites`, `/portal/bookings`, `/portal/reports`, `/portal/invoices` |
+| Area       | Routes                                                                                                                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Public     | `/`, `/services`, `/services/[slug]`, `/how-it-works`, `/areas`, `/areas/[slug]`, `/about`, `/contact`, `/faq`, `/reviews`, `/blog`, `/blog/[slug]`, `/terms`, `/privacy`                               |
+| Booking    | `/book`, `/book/load`, `/book/items`, `/book/photo-quote`, `/book/details`, `/book/schedule`, `/book/checkout`, `/book/confirmation/[ref]`, `/book/quote-received`                                      |
+| Customer   | `/login`, `/register`, `/forgot-password`, `/account`, `/account/bookings`, `/account/bookings/[id]`, `/account/documents`, `/account/profile`                                                          |
+| Business   | `/business`, `/business/services`, `/business/portal`, `/business/enquire`, `/portal`, `/portal/sites`, `/portal/bookings`, `/portal/reports`, `/portal/invoices`                                       |
 | Operations | `/admin`, `/admin/jobs`, `/admin/quotes`, `/admin/pricing`, `/admin/catalog`, `/admin/slots`, `/admin/areas`, `/admin/customers`, `/admin/teams`, `/admin/reports`, `/admin/content`, `/admin/settings` |
-| Crew | `/crew`, `/crew/jobs/[id]`, `/crew/history` |
+| Crew       | `/crew`, `/crew/jobs/[id]`, `/crew/history`                                                                                                                                                             |
 
 ## Working backend workflows implemented
 
@@ -71,7 +71,7 @@ Postcode verification uses [Postcodes.io](https://postcodes.io/docs/overview/), 
 This is an **application starter with substantial workflows**, not an audited, ready-to-deploy replacement for every LITTA feature. Do not describe these as completed:
 
 1. **Authentic availability** — the seed generates sample slots, but production needs real driver shifts, zoned calendars, holiday blackouts, travel buffers and operation hours.
-2. **Capacity & resilience** — use a database transaction or background reservation service for all state transitions; expire and release unpaid bookings, reconcile Stripe sessions, release held capacity on refund/cancellation and regularly reconcile `reservedCount` vs active holds/paid jobs. TTL deletion on holds does *not* release counters by itself. Current expiry cleanup runs when slot endpoints are called.
+2. **Capacity & resilience** — use a database transaction or background reservation service for all state transitions; expire and release unpaid bookings, reconcile Stripe sessions, release held capacity on refund/cancellation and regularly reconcile `reservedCount` vs active holds/paid jobs. TTL deletion on holds does _not_ release counters by itself. Current expiry cleanup runs when slot endpoints are called.
 3. **Cloudinary security** — add quota/rate limits, upload presets with explicit allowed MIME types/max bytes, verify assets by authenticated server-side Cloudinary API before accepting public IDs, virus/moderation review, and private asset delivery for sensitive photos. The current quote upload signing endpoint is public for guest quotes; it needs anti-abuse controls.
 4. **Security hardening** — use rate limiting, bot protections, CSRF token defense where appropriate, email verification, 2FA for admins, password recovery, audit trail for pricing overrides and pen testing. Origin checks on mutating API requests are supplementary, not complete CSRF defense.
 5. **Pricing administration** — seed unit prices are currently used in the `pricing.ts` engine, not the MongoDB catalog edits. Connect production `priceBooks` to the calculator before advertising admin-editable live tariffs.

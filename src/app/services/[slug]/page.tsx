@@ -1,1 +1,71 @@
-import {SERVICES} from "@/lib/constants";import {notFound} from "next/navigation";import Image from "next/image";import Link from "next/link";import {PageTitle} from "@/components/page-title";export function generateStaticParams(){return SERVICES.map(s=>({slug:s.slug}))}export async function generateMetadata({params}:{params:Promise<{slug:string}>}){const {slug}=await params;return {title:SERVICES.find(s=>s.slug===slug)?.title||"Service"}}export default async function ServicePage({params}:{params:Promise<{slug:string}>}){const {slug}=await params;const service=SERVICES.find(s=>s.slug===slug);if(!service)notFound();const photo=slug==="house"||slug==="office";return <><PageTitle eyebrow="Our services" title={service.title} desc={`${service.subtitle}. Tell us what needs collecting and we'll guide you to the right option.`}/><div className="container section grid md:grid-cols-2 gap-12 items-center"><Image className="rounded-3xl w-full" src={service.image} width={610} height={420} alt={service.title}/><div><h2 className="heading">Easy booking for {service.title.toLowerCase()}</h2><p className="muted mt-4">We collect suitable household and commercial waste, subject to your location, access and waste type. Restricted or hazardous materials require a bespoke assessment.</p><div className="flex gap-4 flex-wrap mt-6"><Link className="btn btn-primary" href={photo?"/book/photo-quote":slug==="general-waste"?"/book/load":"/book/items"}>{photo?"Request a quote":"See booking options"}</Link><Link className="btn btn-outline" href="/contact">Speak to us</Link></div></div></div></>}
+import { SERVICES } from "@/lib/constants";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import Link from "next/link";
+import { PageTitle } from "@/components/page-title";
+export function generateStaticParams() {
+  return SERVICES.map((s) => ({ slug: s.slug }));
+}
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  return { title: SERVICES.find((s) => s.slug === slug)?.title || "Service" };
+}
+export default async function ServicePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+  const service = SERVICES.find((s) => s.slug === slug);
+  if (!service) notFound();
+  const photo = slug === "house" || slug === "office";
+  return (
+    <>
+      <PageTitle
+        eyebrow="Our services"
+        title={service.title}
+        desc={`${service.subtitle}. Tell us what needs collecting and we'll guide you to the right option.`}
+      />
+      <div className="container section grid md:grid-cols-2 gap-12 items-center">
+        <Image
+          className="rounded-3xl w-full"
+          src={service.image}
+          width={610}
+          height={420}
+          alt={service.title}
+        />
+        <div>
+          <h2 className="heading">
+            Easy booking for {service.title.toLowerCase()}
+          </h2>
+          <p className="muted mt-4">
+            We collect suitable household and commercial waste, subject to your
+            location, access and waste type. Restricted or hazardous materials
+            require a bespoke assessment.
+          </p>
+          <div className="flex gap-4 flex-wrap mt-6">
+            <Link
+              className="btn btn-primary"
+              href={
+                photo
+                  ? "/book/photo-quote"
+                  : slug === "general-waste"
+                    ? "/book/load"
+                    : "/book/items"
+              }
+            >
+              {photo ? "Request a quote" : "See booking options"}
+            </Link>
+            <Link className="btn btn-outline" href="/contact">
+              Speak to us
+            </Link>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

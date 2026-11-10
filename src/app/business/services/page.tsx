@@ -1,1 +1,19 @@
-import {PageTitle} from "@/components/page-title";import Link from "next/link";export default function Services(){return <><PageTitle title="Business waste services"/><div className="container section"><p className="muted mb-5">Office clearances, furniture removal, site waste and other managed collections are assessed based on service location and waste classification.</p><Link className="btn btn-primary" href="/business/enquire">Get a tailored quote</Link></div></>}
+import { PageTitle } from "@/components/page-title";
+import Link from "next/link";
+export default function Services() {
+  return (
+    <>
+      <PageTitle title="Business waste services" />
+      <div className="container section">
+        <p className="muted mb-5">
+          Office clearances, furniture removal, site waste and other managed
+          collections are assessed based on service location and waste
+          classification.
+        </p>
+        <Link className="btn btn-primary" href="/business/enquire">
+          Get a tailored quote
+        </Link>
+      </div>
+    </>
+  );
+}

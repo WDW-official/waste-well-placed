@@ -1,3 +1,71 @@
-import {getSession,isStaff} from "@/lib/auth";import {connectDB} from "@/lib/db";import {Booking,Audit} from "@/lib/models";import {z} from "zod";import {ok,fail,errorResponse,ensureSameOrigin} from "@/lib/http";import mongoose from "mongoose";
-const next:{[key:string]:string[]}={confirmed:["assigned"],assigned:["en_route"],en_route:["arrived"],arrived:["completed"]};
-export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){if(!ensureSameOrigin(req))return fail("Invalid origin",403);const u=await getSession();if(!u||!(u.role==="crew"||isStaff(u.role)))return fail("Forbidden",403);try{const {id}=await params;if(!mongoose.isValidObjectId(id))return fail("Invalid id");const data=z.object({status:z.enum(["assigned","en_route","arrived","completed"]),note:z.string().max(1000).optional(),evidence:z.object({before:z.array(z.string().url()).max(12),after:z.array(z.string().url()).max(12),wasteDescription:z.string().max(500),ewcCode:z.string().max(30).optional(),weightKg:z.number().nonnegative().optional()}).optional()}).parse(await req.json());await connectDB();const b=await Booking.findById(id);if(!b)return fail("Not found",404);if(u.role==="crew"&&String(b.assignedCrewId)!==u.id)return fail("Job not assigned to you",403);if(!next[b.status]?.includes(data.status))return fail(`Cannot change ${b.status} to ${data.status}`,409);if(data.status==="completed"&&(!data.evidence||!data.evidence.after.length))return fail("Completion evidence is required",422);b.status=data.status;b.events.push({status:data.status,note:data.note||"",at:new Date(),by:u.id});if(data.evidence)b.evidence={...data.evidence,transferNoteId:`WTN-${b.reference}`};await b.save();await Audit.create({actorId:u.id,action:`job.${data.status}`,entity:"booking",entityId:id});return ok({updated:true,status:b.status})}catch(e){return errorResponse(e)}}
+import { getSession, isStaff } from "@/lib/auth";
+import { connectDB } from "@/lib/db";
+import { Booking, Audit } from "@/lib/models";
+import { z } from "zod";
+import { ok, fail, errorResponse, ensureSameOrigin } from "@/lib/http";
+import mongoose from "mongoose";
+const next: { [key: string]: string[] } = {
+  confirmed: ["assigned"],
+  assigned: ["en_route"],
+  en_route: ["arrived"],
+  arrived: ["completed"],
+};
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  if (!ensureSameOrigin(req)) return fail("Invalid origin", 403);
+  const u = await getSession();
+  if (!u || !(u.role === "crew" || isStaff(u.role)))
+    return fail("Forbidden", 403);
+  try {
+    const { id } = await params;
+    if (!mongoose.isValidObjectId(id)) return fail("Invalid id");
+    const data = z
+      .object({
+        status: z.enum(["assigned", "en_route", "arrived", "completed"]),
+        note: z.string().max(1000).optional(),
+        evidence: z
+          .object({
+            before: z.array(z.string().url()).max(12),
+            after: z.array(z.string().url()).max(12),
+            wasteDescription: z.string().max(500),
+            ewcCode: z.string().max(30).optional(),
+            weightKg: z.number().nonnegative().optional(),
+          })
+          .optional(),
+      })
+      .parse(await req.json());
+    await connectDB();
+    const b = await Booking.findById(id);
+    if (!b) return fail("Not found", 404);
+    if (u.role === "crew" && String(b.assignedCrewId) !== u.id)
+      return fail("Job not assigned to you", 403);
+    if (!next[b.status]?.includes(data.status))
+      return fail(`Cannot change ${b.status} to ${data.status}`, 409);
+    if (
+      data.status === "completed" &&
+      (!data.evidence || !data.evidence.after.length)
+    )
+      return fail("Completion evidence is required", 422);
+    b.status = data.status;
+    b.events.push({
+      status: data.status,
+      note: data.note || "",
+      at: new Date(),
+      by: u.id,
+    });
+    if (data.evidence)
+      b.evidence = { ...data.evidence, transferNoteId: `WTN-${b.reference}` };
+    await b.save();
+    await Audit.create({
+      actorId: u.id,
+      action: `job.${data.status}`,
+      entity: "booking",
+      entityId: id,
+    });
+    return ok({ updated: true, status: b.status });
+  } catch (e) {
+    return errorResponse(e);
+  }
+}

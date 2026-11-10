@@ -1,1 +1,13 @@
-import {PageTitle} from "@/components/page-title";import {AuthForm} from "@/components/auth-form";export const metadata={title:"Create account"};export default function Register(){return <><PageTitle title="Create your account"/><div className="container section"><AuthForm mode="register"/></div></>}
+import { PageTitle } from "@/components/page-title";
+import { AuthForm } from "@/components/auth-form";
+export const metadata = { title: "Create account" };
+export default function Register() {
+  return (
+    <>
+      <PageTitle title="Create your account" />
+      <div className="container section">
+        <AuthForm mode="register" />
+      </div>
+    </>
+  );
+}

@@ -1,2 +1,46 @@
-import {z} from "zod";import {getSession} from "@/lib/auth";import {connectDB} from "@/lib/db";import {Hold,Slot} from "@/lib/models";import {releaseExpiredHolds} from "@/app/api/slots/route";import {ok,errorResponse,fail,ensureSameOrigin} from "@/lib/http";
-export async function POST(req:Request){if(!ensureSameOrigin(req))return fail("Invalid origin",403);try{const session=await getSession();if(!session)return fail("Log in to reserve a collection slot",401);const {slotId}=z.object({slotId:z.string().regex(/^[a-f0-9]{24}$/i)}).parse(await req.json());await connectDB();await releaseExpiredHolds();const slot=await Slot.findOneAndUpdate({_id:slotId,active:true,start:{$gt:new Date()},$expr:{$lt:["$reservedCount","$capacity"]}},{$inc:{reservedCount:1}},{new:true});if(!slot)return fail("This appointment is no longer available",409);try{const hold=await Hold.create({slotId,userId:session.id,expiresAt:new Date(Date.now()+15*60*1000),status:"active"});return ok({holdId:String(hold.id),expiresAt:hold.expiresAt},201)}catch(e){await Slot.updateOne({_id:slotId,reservedCount:{$gt:0}},{$inc:{reservedCount:-1}});throw e}}catch(e){return errorResponse(e)}}
+import { z } from "zod";
+import { getSession } from "@/lib/auth";
+import { connectDB } from "@/lib/db";
+import { Hold, Slot } from "@/lib/models";
+import { releaseExpiredHolds } from "@/lib/slot-holds";
+import { ok, errorResponse, fail, ensureSameOrigin } from "@/lib/http";
+export async function POST(req: Request) {
+  if (!ensureSameOrigin(req)) return fail("Invalid origin", 403);
+  try {
+    const session = await getSession();
+    if (!session) return fail("Log in to reserve a collection slot", 401);
+    const { slotId } = z
+      .object({ slotId: z.string().regex(/^[a-f0-9]{24}$/i) })
+      .parse(await req.json());
+    await connectDB();
+    await releaseExpiredHolds();
+    const slot = await Slot.findOneAndUpdate(
+      {
+        _id: slotId,
+        active: true,
+        start: { $gt: new Date() },
+        $expr: { $lt: ["$reservedCount", "$capacity"] },
+      },
+      { $inc: { reservedCount: 1 } },
+      { new: true },
+    );
+    if (!slot) return fail("This appointment is no longer available", 409);
+    try {
+      const hold = await Hold.create({
+        slotId,
+        userId: session.id,
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+        status: "active",
+      });
+      return ok({ holdId: String(hold.id), expiresAt: hold.expiresAt }, 201);
+    } catch (e) {
+      await Slot.updateOne(
+        { _id: slotId, reservedCount: { $gt: 0 } },
+        { $inc: { reservedCount: -1 } },
+      );
+      throw e;
+    }
+  } catch (e) {
+    return errorResponse(e);
+  }
+}

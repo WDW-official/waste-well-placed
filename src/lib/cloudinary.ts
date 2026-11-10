@@ -1,2 +1,16 @@
-import {v2 as cloudinary} from "cloudinary";
-export function configureCloudinary(){for(const n of ["CLOUDINARY_CLOUD_NAME","CLOUDINARY_API_KEY","CLOUDINARY_API_SECRET"])if(!process.env[n])throw new Error(`${n} missing`);cloudinary.config({cloud_name:process.env.CLOUDINARY_CLOUD_NAME,api_key:process.env.CLOUDINARY_API_KEY,api_secret:process.env.CLOUDINARY_API_SECRET,secure:true});return cloudinary}
+import { v2 as cloudinary } from "cloudinary";
+export function configureCloudinary() {
+  for (const n of [
+    "CLOUDINARY_CLOUD_NAME",
+    "CLOUDINARY_API_KEY",
+    "CLOUDINARY_API_SECRET",
+  ])
+    if (!process.env[n]) throw new Error(`${n} missing`);
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+    secure: true,
+  });
+  return cloudinary;
+}

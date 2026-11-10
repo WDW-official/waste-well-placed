@@ -1,1 +1,19 @@
-export function PageTitle({eyebrow,title,desc}:{eyebrow?:string;title:string;desc?:string}){return <section className="bg-[#f0fae9] py-16"><div className="container">{eyebrow&&<span className="badge mb-4">{eyebrow.toUpperCase()}</span>}<h1 className="heading max-w-4xl">{title}</h1>{desc&&<p className="muted text-lg max-w-2xl mt-5">{desc}</p>}</div></section>}
+export function PageTitle({
+  eyebrow,
+  title,
+  desc,
+}: {
+  eyebrow?: string;
+  title: string;
+  desc?: string;
+}) {
+  return (
+    <section className="bg-[#f0fae9] py-16">
+      <div className="container">
+        {eyebrow && <span className="badge mb-4">{eyebrow.toUpperCase()}</span>}
+        <h1 className="heading max-w-4xl">{title}</h1>
+        {desc && <p className="muted text-lg max-w-2xl mt-5">{desc}</p>}
+      </div>
+    </section>
+  );
+}

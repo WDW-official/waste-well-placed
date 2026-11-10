@@ -1,1 +1,15 @@
-import {PageTitle} from "@/components/page-title";import {EnquiryForm} from "@/components/enquiry-form";export default function Enquire(){return <><PageTitle title="Business collection enquiry" desc="Share details of your premises, waste stream and preferred frequency."/><div className="container section max-w-3xl"><EnquiryForm type="business"/></div></>}
+import { PageTitle } from "@/components/page-title";
+import { EnquiryForm } from "@/components/enquiry-form";
+export default function Enquire() {
+  return (
+    <>
+      <PageTitle
+        title="Business collection enquiry"
+        desc="Share details of your premises, waste stream and preferred frequency."
+      />
+      <div className="container section max-w-3xl">
+        <EnquiryForm type="business" />
+      </div>
+    </>
+  );
+}

@@ -1,2 +1,70 @@
-import {getSession,isStaff} from "@/lib/auth";import {connectDB} from "@/lib/db";import {Quote,Audit} from "@/lib/models";import {sendEmail} from "@/lib/notifications";import {z} from "zod";import {ok,fail,errorResponse,ensureSameOrigin} from "@/lib/http";import mongoose from "mongoose";
-export async function PATCH(req:Request,{params}:{params:Promise<{id:string}>}){if(!ensureSameOrigin(req))return fail("Invalid origin",403);const u=await getSession();if(!u||!isStaff(u.role))return fail("Forbidden",403);try{const {id}=await params;if(!mongoose.isValidObjectId(id))return fail("Invalid id");const patch=z.object({status:z.enum(["reviewing","awaiting_customer","rejected","expired"]),priceMinor:z.number().int().min(0).optional(),vatMinor:z.number().int().min(0).optional(),validUntil:z.string().datetime().optional()}).parse(await req.json());await connectDB();const fields={status:patch.status,...(patch.priceMinor!==undefined?{priceMinor:patch.priceMinor,totalMinor:patch.priceMinor+(patch.vatMinor||0)}:{}),...(patch.vatMinor!==undefined?{vatMinor:patch.vatMinor}:{}),...(patch.validUntil?{validUntil:new Date(patch.validUntil)}:{})};const q=await Quote.findByIdAndUpdate(id,{$set:fields,$push:{events:{action:patch.status,actorId:u.id,at:new Date()}}},{new:true});if(!q)return fail("Not found",404);await Audit.create({actorId:u.id,action:"quote.updated",entity:"quote",entityId:id});if(patch.status==="awaiting_customer")await sendEmail(q.customer.email,"Your Waste Well Placed quotation is ready",`<p>Your quote reference ${q.reference} has been reviewed. Please contact our team to confirm acceptance and a collection slot.</p>`);return ok({updated:true,quote:q})}catch(e){return errorResponse(e)}}
+import { getSession, isStaff } from "@/lib/auth";
+import { connectDB } from "@/lib/db";
+import { Quote, Audit } from "@/lib/models";
+import { sendEmail } from "@/lib/notifications";
+import { z } from "zod";
+import { ok, fail, errorResponse, ensureSameOrigin } from "@/lib/http";
+import mongoose from "mongoose";
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  if (!ensureSameOrigin(req)) return fail("Invalid origin", 403);
+  const u = await getSession();
+  if (!u || !isStaff(u.role)) return fail("Forbidden", 403);
+  try {
+    const { id } = await params;
+    if (!mongoose.isValidObjectId(id)) return fail("Invalid id");
+    const patch = z
+      .object({
+        status: z.enum([
+          "reviewing",
+          "awaiting_customer",
+          "rejected",
+          "expired",
+        ]),
+        priceMinor: z.number().int().min(0).optional(),
+        vatMinor: z.number().int().min(0).optional(),
+        validUntil: z.string().datetime().optional(),
+      })
+      .parse(await req.json());
+    await connectDB();
+    const fields = {
+      status: patch.status,
+      ...(patch.priceMinor !== undefined
+        ? {
+            priceMinor: patch.priceMinor,
+            totalMinor: patch.priceMinor + (patch.vatMinor || 0),
+          }
+        : {}),
+      ...(patch.vatMinor !== undefined ? { vatMinor: patch.vatMinor } : {}),
+      ...(patch.validUntil ? { validUntil: new Date(patch.validUntil) } : {}),
+    };
+    const q = await Quote.findByIdAndUpdate(
+      id,
+      {
+        $set: fields,
+        $push: {
+          events: { action: patch.status, actorId: u.id, at: new Date() },
+        },
+      },
+      { new: true },
+    );
+    if (!q) return fail("Not found", 404);
+    await Audit.create({
+      actorId: u.id,
+      action: "quote.updated",
+      entity: "quote",
+      entityId: id,
+    });
+    if (patch.status === "awaiting_customer" && q.customer?.email)
+      await sendEmail(
+        q.customer.email,
+        "Your Waste Well Placed quotation is ready",
+        `<p>Your quote reference ${q.reference} has been reviewed. Please contact our team to confirm acceptance and a collection slot.</p>`,
+      );
+    return ok({ updated: true, quote: q });
+  } catch (e) {
+    return errorResponse(e);
+  }
+}

@@ -1,1 +1,21 @@
-import {PageTitle} from "@/components/page-title";import Link from "next/link";export default function Forgot(){return <><PageTitle title="Account recovery"/><div className="container section max-w-lg"><div className="card p-7"><p>Password reset by email is not activated in this build. Please contact the support team to verify your account and request a secure reset.</p><Link href="/contact" className="btn btn-primary mt-5">Contact support</Link></div></div></>}
+import { PageTitle } from "@/components/page-title";
+import Link from "next/link";
+export default function Forgot() {
+  return (
+    <>
+      <PageTitle title="Account recovery" />
+      <div className="container section max-w-lg">
+        <div className="card p-7">
+          <p>
+            Password reset by email is not activated in this build. Please
+            contact the support team to verify your account and request a secure
+            reset.
+          </p>
+          <Link href="/contact" className="btn btn-primary mt-5">
+            Contact support
+          </Link>
+        </div>
+      </div>
+    </>
+  );
+}

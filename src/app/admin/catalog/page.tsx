@@ -1,1 +1,11 @@
-import {AdminResource} from "@/components/admin-resource";export default function Page(){return <AdminResource title='Item catalog' name='catalog' fields={['key', 'title', 'category', 'priceMinor', 'active']} editable={true}/>}
+import { AdminResource } from "@/components/admin-resource";
+export default function Page() {
+  return (
+    <AdminResource
+      title="Item catalog"
+      name="catalog"
+      fields={["key", "title", "category", "priceMinor", "active"]}
+      editable={true}
+    />
+  );
+}

@@ -1,1 +1,11 @@
-import {AdminResource} from "@/components/admin-resource";export default function Page(){return <AdminResource title='Appointment slots' name='slots' fields={['zoneId', 'start', 'capacity', 'reservedCount', 'active']} editable={true}/>}
+import { AdminResource } from "@/components/admin-resource";
+export default function Page() {
+  return (
+    <AdminResource
+      title="Appointment slots"
+      name="slots"
+      fields={["zoneId", "start", "capacity", "reservedCount", "active"]}
+      editable={true}
+    />
+  );
+}

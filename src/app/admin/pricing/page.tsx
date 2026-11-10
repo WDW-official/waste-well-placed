@@ -1,1 +1,11 @@
-import {AdminResource} from "@/components/admin-resource";export default function Page(){return <AdminResource title='Price book / service prices' name='services' fields={['slug', 'title', 'basePriceMinor', 'active']} editable={true}/>}
+import { AdminResource } from "@/components/admin-resource";
+export default function Page() {
+  return (
+    <AdminResource
+      title="Price book / service prices"
+      name="services"
+      fields={["slug", "title", "basePriceMinor", "active"]}
+      editable={true}
+    />
+  );
+}

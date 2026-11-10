@@ -1,11 +1,135 @@
-export const SERVICES=[
-{slug:"general-waste",title:"General waste",subtitle:"Everyday rubbish, bags and boxes",image:"/images/general-waste.jpg",icon:"Trash2"},
-{slug:"furniture",title:"Furniture removal",subtitle:"Tables, chairs, beds and cabinets",image:"/images/furniture.jpg",icon:"Armchair"},
-{slug:"sofas",title:"Sofa removal",subtitle:"Sofas and armchairs of all sizes",image:"/images/sofas.jpg",icon:"Sofa"},
-{slug:"appliances",title:"Appliance removal",subtitle:"Fridges, washers and electricals",image:"/images/appliances.jpg",icon:"Refrigerator"},
-{slug:"office",title:"Office clearance",subtitle:"Desks, chairs and commercial waste",image:"/images/office.jpg",icon:"Building2"},
-{slug:"house",title:"House clearance",subtitle:"Full and partial home clearances",image:"/images/house.jpg",icon:"House"}
+export const SERVICES = [
+  {
+    slug: "general-waste",
+    title: "General waste",
+    subtitle: "Everyday rubbish, bags and boxes",
+    image: "/images/general-waste.jpg",
+    icon: "Trash2",
+  },
+  {
+    slug: "furniture",
+    title: "Furniture removal",
+    subtitle: "Tables, chairs, beds and cabinets",
+    image: "/images/furniture.jpg",
+    icon: "Armchair",
+  },
+  {
+    slug: "sofas",
+    title: "Sofa removal",
+    subtitle: "Sofas and armchairs of all sizes",
+    image: "/images/sofas.jpg",
+    icon: "Sofa",
+  },
+  {
+    slug: "appliances",
+    title: "Appliance removal",
+    subtitle: "Fridges, washers and electricals",
+    image: "/images/appliances.jpg",
+    icon: "Refrigerator",
+  },
+  {
+    slug: "office",
+    title: "Office clearance",
+    subtitle: "Desks, chairs and commercial waste",
+    image: "/images/office.jpg",
+    icon: "Building2",
+  },
+  {
+    slug: "house",
+    title: "House clearance",
+    subtitle: "Full and partial home clearances",
+    image: "/images/house.jpg",
+    icon: "House",
+  },
 ];
-export const LOADS=[{key:"mini",title:"Mini load",volume:2,weight:100,bags:10,minutes:15,base:5900},{key:"small",title:"Small load",volume:4,weight:200,bags:20,minutes:25,base:9900},{key:"medium",title:"Medium load",volume:7,weight:350,bags:35,minutes:40,base:15900},{key:"large",title:"Large load",volume:12,weight:650,bags:55,minutes:60,base:23900},{key:"xl",title:"XL load",volume:16,weight:900,bags:75,minutes:90,base:31900}];
-export const ITEMS=[{key:"sofa-2",title:"2-seater sofa",category:"Sofas",price:7400},{key:"sofa-3",title:"3-seater sofa",category:"Sofas",price:8900},{key:"mattress",title:"Mattress",category:"Beds",price:5900},{key:"bed-frame",title:"Bed frame",category:"Beds",price:6900},{key:"fridge",title:"Fridge freezer",category:"Appliances",price:8900},{key:"washer",title:"Washing machine",category:"Appliances",price:6900},{key:"chair",title:"Dining chair",category:"Furniture",price:1900},{key:"table",title:"Dining table",category:"Furniture",price:5900},{key:"desk",title:"Office desk",category:"Office",price:4900},{key:"bags",title:"Bagged rubbish",category:"General",price:900}];
-export const DEFAULT_FAQS=[{q:"How do I get a price?",a:"Enter a supported postcode and choose a load size or individual items. The final amount is shown before payment. Large or unusual clearances are reviewed by our team."},{q:"Which areas do you cover?",a:"Coverage is determined by our current operating postcode zones. Enter your postcode to check availability; we do not promise nationwide service unless we have confirmed it."},{q:"What waste can you collect?",a:"We can assess household and commercial rubbish, furniture and many appliances. Hazardous materials, asbestos, chemicals and other restricted waste require a separate specialist assessment."},{q:"Do I get waste documentation?",a:"Following completion, we can issue an appropriate waste transfer record with the details recorded by the collection team. We only claim licences or recycling rates that have been verified."},{q:"Can I change or cancel my booking?",a:"Contact our team with your reference. Applicable cancellation or rescheduling terms are displayed before payment."}];
+export const LOADS = [
+  {
+    key: "mini",
+    title: "Mini load",
+    volume: 2,
+    weight: 100,
+    bags: 10,
+    minutes: 15,
+    base: 5900,
+  },
+  {
+    key: "small",
+    title: "Small load",
+    volume: 4,
+    weight: 200,
+    bags: 20,
+    minutes: 25,
+    base: 9900,
+  },
+  {
+    key: "medium",
+    title: "Medium load",
+    volume: 7,
+    weight: 350,
+    bags: 35,
+    minutes: 40,
+    base: 15900,
+  },
+  {
+    key: "large",
+    title: "Large load",
+    volume: 12,
+    weight: 650,
+    bags: 55,
+    minutes: 60,
+    base: 23900,
+  },
+  {
+    key: "xl",
+    title: "XL load",
+    volume: 16,
+    weight: 900,
+    bags: 75,
+    minutes: 90,
+    base: 31900,
+  },
+];
+export const ITEMS = [
+  { key: "sofa-2", title: "2-seater sofa", category: "Sofas", price: 7400 },
+  { key: "sofa-3", title: "3-seater sofa", category: "Sofas", price: 8900 },
+  { key: "mattress", title: "Mattress", category: "Beds", price: 5900 },
+  { key: "bed-frame", title: "Bed frame", category: "Beds", price: 6900 },
+  {
+    key: "fridge",
+    title: "Fridge freezer",
+    category: "Appliances",
+    price: 8900,
+  },
+  {
+    key: "washer",
+    title: "Washing machine",
+    category: "Appliances",
+    price: 6900,
+  },
+  { key: "chair", title: "Dining chair", category: "Furniture", price: 1900 },
+  { key: "table", title: "Dining table", category: "Furniture", price: 5900 },
+  { key: "desk", title: "Office desk", category: "Office", price: 4900 },
+  { key: "bags", title: "Bagged rubbish", category: "General", price: 900 },
+];
+export const DEFAULT_FAQS = [
+  {
+    q: "How do I get a price?",
+    a: "Enter a supported postcode and choose a load size or individual items. The final amount is shown before payment. Large or unusual clearances are reviewed by our team.",
+  },
+  {
+    q: "Which areas do you cover?",
+    a: "Coverage is determined by our current operating postcode zones. Enter your postcode to check availability; we do not promise nationwide service unless we have confirmed it.",
+  },
+  {
+    q: "What waste can you collect?",
+    a: "We can assess household and commercial rubbish, furniture and many appliances. Hazardous materials, asbestos, chemicals and other restricted waste require a separate specialist assessment.",
+  },
+  {
+    q: "Do I get waste documentation?",
+    a: "Following completion, we can issue an appropriate waste transfer record with the details recorded by the collection team. We only claim licences or recycling rates that have been verified.",
+  },
+  {
+    q: "Can I change or cancel my booking?",
+    a: "Contact our team with your reference. Applicable cancellation or rescheduling terms are displayed before payment.",
+  },
+];

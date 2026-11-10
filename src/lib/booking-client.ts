@@ -1,6 +1,82 @@
-export type BookingDraft={kind:"load"|"items";postcode:string;selected?:boolean;contact?:{name:string;email:string;phone:string;business:boolean;whatsapp:boolean};photos?:{publicId:string;secureUrl:string}[];loadKey?:string;items?:{key:string;qty:number}[];stairs:boolean;longCarry:boolean;specialHandling:boolean;address?:{line1:string;city:string;postcode:string;notes:string};slotId?:string;holdId?:string;date?:string;estimate?:{subtotalMinor:number;surchargeMinor:number;vatMinor:number;totalMinor:number;lines:{title:string;qty:number;unitMinor:number}[]}};
-const KEY="wwp_draft";export const defaultDraft:BookingDraft={kind:"load",postcode:"",loadKey:"small",items:[],stairs:false,longCarry:false,specialHandling:false};
-export function loadDraft():BookingDraft{if(typeof window==="undefined")return defaultDraft;try{const d=JSON.parse(localStorage.getItem(KEY)||"null")||{};const start=JSON.parse(sessionStorage.getItem("wwp_booking_start")||"null")||{};return {...defaultDraft,...d,postcode:start.postcode||d.postcode||"",date:start.date??d.date??""}}catch{return {...defaultDraft}}}
-export function saveDraft(d:BookingDraft){if(typeof window!=="undefined"){localStorage.setItem(KEY,JSON.stringify(d));window.dispatchEvent(new Event("wwp-draft-change"))}}
-export function clearDraft(){if(typeof window!=="undefined"){localStorage.removeItem(KEY);sessionStorage.removeItem("wwp_booking_start");window.dispatchEvent(new Event("wwp-draft-change"))}}
-export async function request<T=Record<string,unknown>>(url:string,body:unknown,method="POST"):Promise<T>{const res=await fetch(url,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const json=await res.json();if(!res.ok)throw new Error(json.error||"Request failed");return json}
+export type BookingDraft = {
+  kind: "load" | "items";
+  postcode: string;
+  selected?: boolean;
+  contact?: {
+    name: string;
+    email: string;
+    phone: string;
+    business: boolean;
+    whatsapp: boolean;
+  };
+  photos?: { publicId: string; secureUrl: string }[];
+  loadKey?: string;
+  items?: { key: string; qty: number }[];
+  stairs: boolean;
+  longCarry: boolean;
+  specialHandling: boolean;
+  address?: { line1: string; city: string; postcode: string; notes: string };
+  slotId?: string;
+  holdId?: string;
+  date?: string;
+  estimate?: {
+    subtotalMinor: number;
+    surchargeMinor: number;
+    vatMinor: number;
+    totalMinor: number;
+    lines: { title: string; qty: number; unitMinor: number }[];
+  };
+};
+const KEY = "wwp_draft";
+export const defaultDraft: BookingDraft = {
+  kind: "load",
+  postcode: "",
+  loadKey: "small",
+  items: [],
+  stairs: false,
+  longCarry: false,
+  specialHandling: false,
+};
+export function loadDraft(): BookingDraft {
+  if (typeof window === "undefined") return defaultDraft;
+  try {
+    const d = JSON.parse(localStorage.getItem(KEY) || "null") || {};
+    const start =
+      JSON.parse(sessionStorage.getItem("wwp_booking_start") || "null") || {};
+    return {
+      ...defaultDraft,
+      ...d,
+      postcode: start.postcode || d.postcode || "",
+      date: start.date ?? d.date ?? "",
+    };
+  } catch {
+    return { ...defaultDraft };
+  }
+}
+export function saveDraft(d: BookingDraft) {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(KEY, JSON.stringify(d));
+    window.dispatchEvent(new Event("wwp-draft-change"));
+  }
+}
+export function clearDraft() {
+  if (typeof window !== "undefined") {
+    localStorage.removeItem(KEY);
+    sessionStorage.removeItem("wwp_booking_start");
+    window.dispatchEvent(new Event("wwp-draft-change"));
+  }
+}
+export async function request<T = Record<string, unknown>>(
+  url: string,
+  body: unknown,
+  method = "POST",
+): Promise<T> {
+  const res = await fetch(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const json = await res.json();
+  if (!res.ok) throw new Error(json.error || "Request failed");
+  return json;
+}

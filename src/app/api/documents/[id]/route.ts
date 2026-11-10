@@ -1,2 +1,40 @@
-import {getSession,isStaff} from "@/lib/auth";import {connectDB} from "@/lib/db";import {Booking} from "@/lib/models";import {fail} from "@/lib/http";import mongoose from "mongoose";
-export async function GET(_:Request,{params}:{params:Promise<{id:string}>}){const u=await getSession();if(!u)return fail("Unauthorized",401);const {id}=await params;if(!mongoose.isValidObjectId(id))return fail("Invalid document");await connectDB();const b=await Booking.findById(id).lean();if(!b)return fail("Not found",404);if(String(b.userId)!==u.id&&!isStaff(u.role))return fail("Forbidden",403);if(b.status!=="completed"||!b.evidence?.transferNoteId)return fail("Completion document not available",404);const text=["WASTE WELL PLACED - COLLECTION RECORD","NOT AN OFFICIAL WASTE TRANSFER NOTE UNTIL COMPLETED AND AUTHORISED",`Reference: ${b.reference}`,`Collection date: ${new Date(b.scheduledAt).toISOString()}`,`Address: ${b.address.line1}, ${b.address.city}, ${b.address.postcode}`,`Description: ${b.evidence.wasteDescription||"Not recorded"}`,`EWC code: ${b.evidence.ewcCode||"Not recorded"}`,`Weight: ${b.evidence.weightKg??"Not recorded"} kg`,`Record reference: ${b.evidence.transferNoteId}`,"Carrier legal identity, licence, transfer signatures and destination must be verified before issuing a statutory WTN."].join("\n");return new Response(text,{headers:{"Content-Type":"text/plain; charset=utf-8","Content-Disposition":`attachment; filename="${b.reference}-collection-record.txt"`,"Cache-Control":"no-store"}})}
+import { getSession, isStaff } from "@/lib/auth";
+import { connectDB } from "@/lib/db";
+import { Booking } from "@/lib/models";
+import { fail } from "@/lib/http";
+import mongoose from "mongoose";
+export async function GET(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const u = await getSession();
+  if (!u) return fail("Unauthorized", 401);
+  const { id } = await params;
+  if (!mongoose.isValidObjectId(id)) return fail("Invalid document");
+  await connectDB();
+  const b = await Booking.findById(id).lean();
+  if (!b) return fail("Not found", 404);
+  if (String(b.userId) !== u.id && !isStaff(u.role))
+    return fail("Forbidden", 403);
+  if (b.status !== "completed" || !b.evidence?.transferNoteId)
+    return fail("Completion document not available", 404);
+  const text = [
+    "WASTE WELL PLACED - COLLECTION RECORD",
+    "NOT AN OFFICIAL WASTE TRANSFER NOTE UNTIL COMPLETED AND AUTHORISED",
+    `Reference: ${b.reference}`,
+    `Collection date: ${b.scheduledAt ? new Date(b.scheduledAt).toISOString() : "Not recorded"}`,
+    `Address: ${b.address?.line1}, ${b.address?.city}, ${b.address?.postcode}`,
+    `Description: ${b.evidence.wasteDescription || "Not recorded"}`,
+    `EWC code: ${b.evidence.ewcCode || "Not recorded"}`,
+    `Weight: ${b.evidence.weightKg ?? "Not recorded"} kg`,
+    `Record reference: ${b.evidence.transferNoteId}`,
+    "Carrier legal identity, licence, transfer signatures and destination must be verified before issuing a statutory WTN.",
+  ].join("\n");
+  return new Response(text, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${b.reference}-collection-record.txt"`,
+      "Cache-Control": "no-store",
+    },
+  });
+}

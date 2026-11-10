@@ -1,2 +1,31 @@
-import {z} from "zod";import {connectDB} from "@/lib/db";import {User} from "@/lib/models";import {createSession} from "@/lib/auth";import {ok,fail,errorResponse,ensureSameOrigin} from "@/lib/http";import bcrypt from "bcryptjs";
-export async function POST(req:Request){if(!ensureSameOrigin(req))return fail("Invalid origin",403);try{const {email,password}=z.object({email:z.string().email(),password:z.string()}).parse(await req.json());await connectDB();const user=await User.findOne({email:email.toLowerCase()}).select("+passwordHash");if(!user||!await bcrypt.compare(password,user.passwordHash))return fail("Invalid email or password",401);await createSession({id:String(user.id),role:user.role});return ok({user:{id:String(user.id),name:user.name,email:user.email,role:user.role}})}catch(e){return errorResponse(e)}}
+import { z } from "zod";
+import { connectDB } from "@/lib/db";
+import { User } from "@/lib/models";
+import { createSession } from "@/lib/auth";
+import { ok, fail, errorResponse, ensureSameOrigin } from "@/lib/http";
+import bcrypt from "bcryptjs";
+export async function POST(req: Request) {
+  if (!ensureSameOrigin(req)) return fail("Invalid origin", 403);
+  try {
+    const { email, password } = z
+      .object({ email: z.string().email(), password: z.string() })
+      .parse(await req.json());
+    await connectDB();
+    const user = await User.findOne({ email: email.toLowerCase() }).select(
+      "+passwordHash",
+    );
+    if (!user || !(await bcrypt.compare(password, user.passwordHash)))
+      return fail("Invalid email or password", 401);
+    await createSession({ id: String(user.id), role: user.role });
+    return ok({
+      user: {
+        id: String(user.id),
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
+  } catch (e) {
+    return errorResponse(e);
+  }
+}

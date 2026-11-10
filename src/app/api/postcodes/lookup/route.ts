@@ -6,7 +6,8 @@ export async function GET(req: Request) {
     const code = new URL(req.url).searchParams.get("postcode") || "";
     return ok(await lookupPostcode(code));
   } catch (error) {
-    if (error instanceof PostcodeLookupError) return fail(error.message, error.status);
+    if (error instanceof PostcodeLookupError)
+      return fail(error.message, error.status);
     return errorResponse(error);
   }
 }

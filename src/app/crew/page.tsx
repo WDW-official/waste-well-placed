@@ -1,1 +1,50 @@
-import {getSession,isStaff} from "@/lib/auth";import {connectDB} from "@/lib/db";import {Booking} from "@/lib/models";import Link from "next/link";import {DashLayout} from "@/components/dash-layout";import {formatDate} from "@/lib/utils";export default async function Crew(){const u=await getSession();await connectDB();const filter=isStaff(u!.role)?{status:{$in:["assigned","en_route","arrived"]}}:{assignedCrewId:u!.id,status:{$in:["assigned","en_route","arrived"]}};const jobs=await Booking.find(filter).sort({scheduledAt:1}).limit(60).lean();return <DashLayout type="Collection crew" title="Assigned collection jobs" links={[{name:"Current jobs",href:"/crew"},{name:"History",href:"/crew/history"}]}><div className="grid md:grid-cols-2 gap-4">{jobs.map(j=><Link key={String(j._id)} href={`/crew/jobs/${j._id}`} className="card p-6 service-card"><h2 className="font-bold">{j.reference}</h2><p className="muted mt-2">{j.address.line1}, {j.address.postcode}</p><p className="mt-2">{formatDate(j.scheduledAt)}</p><span className="badge mt-3">{j.status}</span></Link>)}{!jobs.length&&<p className="muted">No active jobs assigned.</p>}</div></DashLayout>}
+import { getSession, isStaff } from "@/lib/auth";
+import { connectDB } from "@/lib/db";
+import { Booking } from "@/lib/models";
+import Link from "next/link";
+import { DashLayout } from "@/components/dash-layout";
+import { formatDate } from "@/lib/utils";
+export default async function Crew() {
+  const u = await getSession();
+  await connectDB();
+  const filter = isStaff(u!.role)
+    ? { status: { $in: ["assigned", "en_route", "arrived"] } }
+    : {
+        assignedCrewId: u!.id,
+        status: { $in: ["assigned", "en_route", "arrived"] },
+      };
+  const jobs = await Booking.find(filter)
+    .sort({ scheduledAt: 1 })
+    .limit(60)
+    .lean();
+  return (
+    <DashLayout
+      type="Collection crew"
+      title="Assigned collection jobs"
+      links={[
+        { name: "Current jobs", href: "/crew" },
+        { name: "History", href: "/crew/history" },
+      ]}
+    >
+      <div className="grid md:grid-cols-2 gap-4">
+        {jobs.map((j) => (
+          <Link
+            key={String(j._id)}
+            href={`/crew/jobs/${j._id}`}
+            className="card p-6 service-card"
+          >
+            <h2 className="font-bold">{j.reference}</h2>
+            <p className="muted mt-2">
+              {j.address?.line1}, {j.address?.postcode}
+            </p>
+            <p className="mt-2">
+              {j.scheduledAt ? formatDate(j.scheduledAt) : "Not scheduled"}
+            </p>
+            <span className="badge mt-3">{j.status}</span>
+          </Link>
+        ))}
+        {!jobs.length && <p className="muted">No active jobs assigned.</p>}
+      </div>
+    </DashLayout>
+  );
+}

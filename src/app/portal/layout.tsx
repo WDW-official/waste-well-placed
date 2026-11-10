@@ -1,1 +1,14 @@
-import {getSession} from "@/lib/auth";import {redirect} from "next/navigation";export default async function Layout({children}:{children:React.ReactNode}){const u=await getSession();if(!u)redirect("/login");if(!["business","admin","superadmin"].includes(u.role))redirect("/account");return children}
+export const dynamic = "force-dynamic";
+import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
+export default async function Layout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const u = await getSession();
+  if (!u) redirect("/login");
+  if (!["business", "admin", "superadmin"].includes(u.role))
+    redirect("/account");
+  return children;
+}
