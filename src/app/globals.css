@@ -4891,3 +4891,13 @@ body:has(.booking-page) > .footer {
     animation: none;
   }
 }
+
+/* Keep form text large enough to prevent iOS Safari from zooming on focus. */
+@media (max-width: 1024px), (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    /* Override smaller font sizes in page-specific form styles. */
+    font-size: 16px !important;
+  }
+}
