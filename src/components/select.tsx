@@ -19,6 +19,7 @@ type SelectProps = {
   value: string;
   options: Option[];
   onValueChange: (value: string) => void;
+  selectedLabel?: string;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -32,6 +33,7 @@ export function Select({
   value,
   options,
   onValueChange,
+  selectedLabel,
   placeholder = "Select an option",
   disabled = false,
   className = "",
@@ -221,7 +223,7 @@ export function Select({
         onClick={() => (expanded ? setOpen(false) : show())}
         onKeyDown={onKeyDown}
       >
-        <span>{selected?.label ?? placeholder}</span>
+        <span>{selectedLabel ?? selected?.label ?? placeholder}</span>
         <ChevronDown
           size={18}
           aria-hidden="true"

@@ -40,15 +40,19 @@ textarea,
 select {
   -webkit-tap-highlight-color: transparent;
 }
-button:focus-visible,
-a:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
-summary:focus-visible {
-  outline: 3px solid #00975b;
-  outline-offset: 4px;
+:focus,
+:focus-visible {
+  outline: none;
 }
+
+input:focus,
+textarea:focus,
+select:focus,
+.custom-select-trigger:focus {
+  outline: 1px solid #000;
+  outline-offset: 0;
+}
+
 h1,
 h2,
 h3,
@@ -2637,7 +2641,7 @@ body:has(.booking-page) > .footer {
     margin-bottom: 10px;
   }
   .hero-intro > p {
-    font-size: 14px;
+    font-size: 11px;
     line-height: 1.5;
     margin-bottom: 0;
   }
@@ -4682,10 +4686,6 @@ body:has(.booking-page) > .footer {
       box-shadow 0.25s,
       background 0.25s;
   }
-  .input:focus {
-    border-color: #699e86;
-    box-shadow: 0 0 0 4px #4a997912;
-  }
   .home-service-card,
   .home-step,
   .expectation-card,
@@ -4984,4 +4984,102 @@ body:has(.booking-page) > .footer {
   .custom-select-chevron {
     transition: none;
   }
+}
+
+/* Collection choices and the direct photo-quote flow. */
+.booking-widget {
+  border-color: #a6e8c5;
+  box-shadow: 0 0 0 4px #d5fbe5;
+}
+.booking-photo-panel .booking-description {
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.booking-photo-actions {
+  display: grid;
+  gap: 14px;
+}
+.booking-photo-upload {
+  width: 100%;
+  min-height: 52px;
+  gap: 10px;
+  font-size: 16px;
+}
+.booking-photo-whatsapp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 4px;
+  color: var(--forest);
+  font-size: 13px;
+  text-align: center;
+  border-radius: 8px;
+}
+.booking-photo-whatsapp:hover {
+  background: #edf8f1;
+}
+.booking-photo-reassurance {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  margin: 14px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+}
+.booking-photo-reassurance > svg {
+  color: var(--forest);
+}
+@media (max-width: 767px) {
+  .booking-photo-panel .booking-description {
+    font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .booking-photo-actions {
+    gap: 8px;
+  }
+  .booking-photo-reassurance {
+    margin-top: 10px;
+    padding-top: 10px;
+    font-size: 10px;
+  }
+}
+
+/* Shared country calling-code picker. */
+.phone-field {
+  min-width: 0;
+}
+.phone-input-group {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.phone-input-group > .phone-country-select {
+  flex: 0 0 96px;
+  width: 96px;
+  padding-inline: 8px;
+  gap: 4px;
+  font-size: 16px;
+}
+.phone-country-select .custom-select-chevron {
+  width: 14px;
+  height: 14px;
+}
+.phone-input-group > .phone-national-input {
+  flex: 1;
+  min-width: 0;
+  width: 0;
+  font-size: 16px;
+}
+.phone-country-status {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
 }

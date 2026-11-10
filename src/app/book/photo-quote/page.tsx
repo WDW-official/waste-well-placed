@@ -17,6 +17,7 @@ import {
   LoaderCircle,
 } from "lucide-react";
 import { request, loadDraft } from "@/lib/booking-client";
+import { PhoneInput } from "@/components/phone-input";
 import { Select } from "@/components/select";
 import { toast } from "sonner";
 
@@ -530,21 +531,13 @@ export default function PhotoQuote() {
                   <label className="request-label" htmlFor="quote-phone">
                     Phone
                   </label>
-                  <div className="request-phone">
-                    <span aria-hidden="true">🇬🇧</span>
-                    <input
-                      className="input"
-                      id="quote-phone"
-                      type="tel"
-                      autoComplete="tel"
-                      required
-                      minLength={8}
-                      maxLength={30}
-                      placeholder="Phone"
-                      value={form.phone}
-                      onChange={(e) => update("phone", e.target.value)}
-                    />
-                  </div>
+                  <PhoneInput
+                    id="quote-phone"
+                    required
+                    value={form.phone}
+                    onValueChange={(value) => update("phone", value)}
+                    disabled={busy}
+                  />
                 </div>
               </div>
               <p className="request-contact-note">

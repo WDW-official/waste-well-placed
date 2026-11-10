@@ -1,4 +1,5 @@
 "use client";
+import { PhoneInput } from "@/components/phone-input";
 import { useState } from "react";
 import { request } from "@/lib/booking-client";
 import { toast } from "sonner";
@@ -50,14 +51,27 @@ export function EnquiryForm({
             <label className="label" htmlFor={x.key}>
               {x.label}
             </label>
-            <input
-              className="input"
-              type={x.type}
-              required={["name", "email"].includes(x.key)}
-              id={x.key}
-              value={f[x.key as keyof typeof f]}
-              onChange={(e) => setF((s) => ({ ...s, [x.key]: e.target.value }))}
-            />
+            {x.key === "phone" ? (
+              <PhoneInput
+                id="phone"
+                disabled={busy}
+                value={f.phone}
+                onValueChange={(phone) =>
+                  setF((current) => ({ ...current, phone }))
+                }
+              />
+            ) : (
+              <input
+                className="input"
+                type={x.type}
+                required={["name", "email"].includes(x.key)}
+                id={x.key}
+                value={f[x.key as keyof typeof f]}
+                onChange={(e) =>
+                  setF((s) => ({ ...s, [x.key]: e.target.value }))
+                }
+              />
+            )}
           </div>
         ))}
       </div>

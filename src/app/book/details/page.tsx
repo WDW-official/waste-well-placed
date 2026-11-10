@@ -1,4 +1,5 @@
 "use client";
+import { PhoneInput } from "@/components/phone-input";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -351,17 +352,11 @@ export default function Details() {
                             <label className="label" htmlFor="quote-phone">
                               Mobile, in case we have a question
                             </label>
-                            <input
-                              className="input"
+                            <PhoneInput
                               id="quote-phone"
-                              type="tel"
-                              autoComplete="tel"
                               required
-                              minLength={8}
-                              maxLength={30}
                               value={c.phone}
-                              onChange={(e) => contact("phone", e.target.value)}
-                              placeholder="e.g. 07123 456789"
+                              onValueChange={(value) => contact("phone", value)}
                             />
                           </div>
                         </div>

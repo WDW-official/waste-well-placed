@@ -31,6 +31,12 @@ Postcode verification uses [Postcodes.io](https://postcodes.io/docs/overview/), 
 - Invalid formats or unknown postcodes return 422; provider failures or a five-second timeout return 503 with a retry message. Successful upstream lookups are cached for 24 hours.
 - This service provides postcode geography, not street addresses or postal towns. Customers enter their collection address and town manually.
 
+## Phone country codes
+
+`GET /api/phone-countries` returns `{ countries: [{ code, name, callingCode, flag }] }`, including `GB`, `United Kingdom`, `+44`, and `🇬🇧`. The list comes from bundled [libphonenumber-js metadata](https://github.com/catamphetamine/libphonenumber-js), with English country names and emoji flags. It needs no API key or external service and is cached for 24 hours.
+
+Booking, photo quote, registration, and enquiry forms share a country-code picker that defaults to the UK. Numbers are stored in international form, including the selected calling code; optional empty phone fields stay empty. Update the library dependency to refresh its numbering metadata.
+
 ## Architecture
 
 - `src/app`: public site, booking flow, auth/account, business/portal, operations/admin and crew.

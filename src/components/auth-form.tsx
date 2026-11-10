@@ -1,4 +1,5 @@
 "use client";
+import { PhoneInput } from "@/components/phone-input";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -65,12 +66,14 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           <label className="label" htmlFor="phone">
             Phone (optional)
           </label>
-          <input
+          <PhoneInput
             id="phone"
-            className="input mb-4"
-            type="tel"
+            className="mb-4"
+            disabled={busy}
             value={form.phone}
-            onChange={(e) => setForm((x) => ({ ...x, phone: e.target.value }))}
+            onValueChange={(phone) =>
+              setForm((current) => ({ ...current, phone }))
+            }
           />
         </div>
       )}
