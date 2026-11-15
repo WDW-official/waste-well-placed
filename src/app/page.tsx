@@ -1,21 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { CSSProperties } from "react";
+import { HERO_IMAGE, STEP_IMAGES } from "@/lib/images";
 import { HeroBooking } from "@/components/hero-booking";
 import { SERVICES, DEFAULT_FAQS, itemBookingHref } from "@/lib/constants";
 import {
   ArrowRight,
   ArrowUpRight,
   CalendarDays,
-  Truck,
   Recycle,
   Camera,
   Leaf,
   Phone,
   MessageCircle,
   Check,
-  ClipboardCheck,
-  MousePointerClick,
-  Armchair,
   ShieldCheck,
 } from "lucide-react";
 import { FAQ } from "@/components/faq";
@@ -24,7 +22,10 @@ import { phoneHref, whatsappHref } from "@/lib/contact";
 export default function Home() {
   return (
     <>
-      <section className="home-hero">
+      <section
+        className="home-hero"
+        style={{ "--hero-image": `url("${HERO_IMAGE}")` } as CSSProperties}
+      >
         <div className="container home-hero-grid">
           <div className="hero-intro">
             <span className="eyebrow hero-eyebrow">
@@ -57,12 +58,12 @@ export default function Home() {
           </div>
           <div className="hero-photo">
             <Image
-              src="/images/hero-team.jpg"
-              alt="Waste Well Placed collection team and van illustration"
+              src={HERO_IMAGE}
+              alt="Waste Well Placed team loading a collection van"
               width={766}
               height={510}
               priority
-              sizes="(max-width: 767px) 130px, 45vw"
+              sizes="(max-width: 767px) 100vw, 45vw"
             />
             <div className="hero-photo-caption">
               <span className="photo-caption-icon">
@@ -73,7 +74,6 @@ export default function Home() {
                 <span>A little care makes a big difference.</span>
               </div>
             </div>
-            <span className="photo-credit">Brand illustration</span>
           </div>
           <div className="hero-booking-wrap">
             <HeroBooking />
@@ -99,7 +99,7 @@ export default function Home() {
         <div className="container">
           <div className="section-top">
             <div>
-              <span className="eyebrow">A PLACE FOR EVERYTHING</span>
+              {/* <span className="eyebrow">A PLACE FOR EVERYTHING</span> */}
               <h2 className="section-title">
                 What can we take off your hands?
               </h2>
@@ -116,6 +116,7 @@ export default function Home() {
             {SERVICES.map((service, i) => (
               <Link
                 className="home-service-card"
+                data-service={service.slug}
                 key={service.slug}
                 href={
                   [
@@ -192,28 +193,35 @@ export default function Home() {
           <div className="home-steps">
             {[
               {
-                Icon: MousePointerClick,
+                image: STEP_IMAGES[0],
                 title: "A few clicks. All booked.",
                 description:
                   "Choose your items or load size, add your address and pick an available collection time.",
               },
               {
-                Icon: Truck,
+                image: STEP_IMAGES[1],
                 title: "Leave the lifting to us.",
                 description:
                   "Your collection team handles the booked waste. Just show us what needs to go.",
               },
               {
-                Icon: Recycle,
+                image: STEP_IMAGES[2],
                 title: "Room for what’s next.",
                 description:
                   "Enjoy your clearer space while we arrange responsible handling of your waste.",
               },
-            ].map(({ Icon, title, description }, i) => (
+            ].map(({ image, title, description }, i) => (
               <article className="home-step" key={title}>
                 <div className="step-top">
                   <span>0{i + 1}</span>
-                  <Icon size={44} strokeWidth={1.4} />
+                  <Image
+                    className="step-art"
+                    src={image}
+                    alt=""
+                    width={80}
+                    height={80}
+                    sizes="(max-width: 767px) 64px, 80px"
+                  />
                 </div>
                 <h3>{title}</h3>
                 <p>{description}</p>
@@ -306,7 +314,7 @@ export default function Home() {
       <section className="home-section">
         <div className="container editorial-row editorial-reverse">
           <div className="editorial-copy">
-            <span className="eyebrow">PEOPLE, NOT JUST PICKUPS</span>
+            {/* <span className="eyebrow">PEOPLE, NOT JUST PICKUPS</span> */}
             <h2 className="section-title">
               A helping hand.
               <br />
@@ -358,7 +366,7 @@ export default function Home() {
         <div className="container">
           <div className="section-top">
             <div>
-              <span className="eyebrow">THE LITTLE THINGS THAT MATTER</span>
+              {/* <span className="eyebrow">THE LITTLE THINGS THAT MATTER</span> */}
               <h2 className="section-title">A better way to make space.</h2>
               <p className="section-description">
                 Straightforward service, from the first click to the final lift.
@@ -368,32 +376,43 @@ export default function Home() {
           <div className="expectation-grid">
             {[
               {
-                Icon: ClipboardCheck,
+                image:
+                  "https://res.cloudinary.com/cfgipbsv/image/upload/v1794780781/Section_04_Card_01_Clarity_Comes_First_3D_Clipboard.png",
                 title: "Clarity comes first.",
                 text: "Review your collection details and calculated price before you pay.",
                 tag: "NO GUESSWORK",
               },
               {
-                Icon: CalendarDays,
+                image:
+                  "https://res.cloudinary.com/cfgipbsv/image/upload/v1794780790/Section_04_Card_02_Fits_Around_Your_Day_3D_Calendar.png",
                 title: "Fits around your day.",
                 text: "Choose from the collection times available in your postcode area.",
                 tag: "YOUR TIME MATTERS",
               },
               {
-                Icon: Camera,
+                image:
+                  "https://res.cloudinary.com/cfgipbsv/image/upload/v1794780611/Section_04_Card_03_A_Bigger_Job_3D_Camera.png",
                 title: "A bigger job? Just ask.",
                 text: "Send us photos for a quote when your clearance needs a closer look.",
                 tag: "A PERSONAL TOUCH",
               },
               {
-                Icon: Recycle,
+                image:
+                  "https://res.cloudinary.com/cfgipbsv/image/upload/v1794780600/Section_04_Card_04_Care_Beyond_Collection_3D_Recycling.png",
                 title: "Care beyond collection.",
                 text: "Responsible waste handling and collection records in your account.",
                 tag: "THOUGHTFULLY HANDLED",
               },
-            ].map(({ Icon, title, text, tag }) => (
+            ].map(({ image, title, text, tag }) => (
               <article key={title} className="expectation-card">
-                <Icon size={26} strokeWidth={1.5} />
+                <Image
+                  className="expectation-art"
+                  src={image}
+                  alt=""
+                  width={80}
+                  height={80}
+                  sizes="(max-width: 767px) 60px, 80px"
+                />
                 <h3>{title}</h3>
                 <p>{text}</p>
                 <span>{tag}</span>

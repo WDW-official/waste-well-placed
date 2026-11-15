@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, type SyntheticEvent } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown, ShoppingCart, ArrowRight } from "lucide-react";
+import { SERVICE_IMAGES } from "@/lib/images";
 import { SERVICES } from "@/lib/constants";
 import { useBasket } from "./basket";
 
@@ -138,7 +139,7 @@ export function Header() {
           <nav aria-label="Mobile navigation">
             <Link className="drawer-service" href="/book/load" onClick={close}>
               <Image
-                src="/images/general-waste.jpg"
+                src={SERVICE_IMAGES["general-waste"]}
                 alt=""
                 width={85}
                 height={65}
@@ -151,7 +152,7 @@ export function Header() {
             </Link>
             <Link className="drawer-service" href="/book/items" onClick={close}>
               <Image
-                src="/images/furniture.jpg"
+                src={SERVICE_IMAGES["furniture"]}
                 alt=""
                 width={85}
                 height={65}
@@ -168,7 +169,12 @@ export function Header() {
               onToggle={toggleCategory}
             >
               <summary>
-                <Image src="/images/office.jpg" alt="" width={85} height={65} />
+                <Image
+                  src={SERVICE_IMAGES["office"]}
+                  alt=""
+                  width={85}
+                  height={65}
+                />
                 <div>
                   <strong>Home & office clearances</strong>
                   <span>A fresh start for your whole space.</span>
@@ -176,18 +182,14 @@ export function Header() {
                 <ChevronDown size={19} />
               </summary>
               <div className="drawer-subservices">
-                {SERVICES.filter((s) => ["house", "office"].includes(s.slug)).map(
-                  (s) => (
-                    <Link
-                      href="/book/photo-quote"
-                      key={s.slug}
-                      onClick={close}
-                    >
-                      <Image src={s.image} alt="" width={120} height={90} />
-                      {s.title}
-                    </Link>
-                  ),
-                )}
+                {SERVICES.filter((s) =>
+                  ["house", "office"].includes(s.slug),
+                ).map((s) => (
+                  <Link href="/book/photo-quote" key={s.slug} onClick={close}>
+                    <Image src={s.image} alt="" width={120} height={90} />
+                    {s.title}
+                  </Link>
+                ))}
               </div>
             </details>
             <details
@@ -197,7 +199,7 @@ export function Header() {
             >
               <summary>
                 <Image
-                  src="/images/general-waste.jpg"
+                  src={SERVICE_IMAGES["construction-waste"]}
                   alt=""
                   width={85}
                   height={65}
@@ -212,11 +214,7 @@ export function Header() {
                 {SERVICES.filter((s) =>
                   ["construction-waste", "garden-waste"].includes(s.slug),
                 ).map((s) => (
-                  <Link
-                    href="/book/photo-quote"
-                    key={s.slug}
-                    onClick={close}
-                  >
+                  <Link href="/book/photo-quote" key={s.slug} onClick={close}>
                     <Image src={s.image} alt="" width={120} height={90} />
                     {s.title}
                   </Link>

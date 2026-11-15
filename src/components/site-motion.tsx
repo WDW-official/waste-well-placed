@@ -52,26 +52,40 @@ export function SiteMotion() {
       pending.delete(element);
       observer?.unobserve(element);
       if (preference.matches || typeof element.animate !== "function") return;
-      const animation = element.animate(
-        [
-          { opacity: 0, translate: "0 20px" },
-          { opacity: 1, translate: "0 0" },
-        ],
-        {
-          duration: 680,
-          delay,
-          easing: "cubic-bezier(.22,1,.36,1)",
-          fill: "backwards",
-        },
-      );
-      playing.set(element, animation);
-      animation.finished
-        .then(() => {
-          if (playing.get(element) === animation) playing.delete(element);
-        })
-        .catch(() => {
-          /* Cancellation on navigation or a motion preference change. */
-        });
+      const isHero = element.matches(".hero-intro");
+      const targets = isHero
+        ? Array.from(element.children).filter(
+            (child): child is HTMLElement => child instanceof HTMLElement,
+          )
+        : [element];
+
+      targets.forEach((target, index) => {
+        const animation = target.animate(
+          isHero
+            ? [
+                { opacity: 0, translate: "0 22px", filter: "blur(5px)" },
+                { opacity: 1, translate: "0 0", filter: "blur(0px)" },
+              ]
+            : [
+                { opacity: 0, translate: "0 20px" },
+                { opacity: 1, translate: "0 0" },
+              ],
+          {
+            duration: isHero ? 900 : 680,
+            delay: delay + (isHero ? index * 140 : 0),
+            easing: "cubic-bezier(.22,1,.36,1)",
+            fill: "backwards",
+          },
+        );
+        playing.set(target, animation);
+        animation.finished
+          .then(() => {
+            if (playing.get(target) === animation) playing.delete(target);
+          })
+          .catch(() => {
+            /* Cancellation on navigation or a motion preference change. */
+          });
+      });
     }
 
     function scan(node: HTMLElement) {

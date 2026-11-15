@@ -22,7 +22,7 @@ export default function Services() {
               alt={s.title}
               width={410}
               height={220}
-              className="w-full h-48 object-cover"
+              className="w-full h-48 object-contain"
             />
             <div className="p-6">
               <h2 className="text-xl font-bold">{s.title}</h2>

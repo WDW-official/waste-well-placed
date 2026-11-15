@@ -17,14 +17,6 @@ import {
   Camera,
 } from "lucide-react";
 
-const photos: Record<string, string> = {
-  Sofas: "sofas",
-  Beds: "house",
-  Appliances: "appliances",
-  Furniture: "furniture",
-  Office: "office",
-  General: "general-waste",
-};
 export default function Items() {
   return (
     <Suspense
@@ -141,12 +133,7 @@ function ItemsContent() {
                   key={item.key}
                 >
                   <div className="item-image">
-                    <Image
-                      src={`/images/${photos[item.category]}.jpg`}
-                      alt=""
-                      width={220}
-                      height={128}
-                    />
+                    <Image src={item.image} alt="" width={220} height={128} />
                   </div>
                   <span className="eyebrow">{item.category}</span>
                   <h2>{item.title}</h2>

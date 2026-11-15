@@ -37,7 +37,7 @@ export default async function ServicePage({
       />
       <div className="container section grid md:grid-cols-2 gap-12 items-center">
         <Image
-          className="rounded-3xl w-full"
+          className="rounded-3xl w-full object-contain"
           src={service.image}
           width={610}
           height={420}
