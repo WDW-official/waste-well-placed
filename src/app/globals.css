@@ -487,15 +487,19 @@ svg {
   backdrop-filter: blur(3px);
 }
 .drawer-top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: white;
   display: flex;
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--line);
-  padding: 16px 22px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 20px 10px;
 }
 .drawer-top img {
-  width: 130px;
-  height: 62px;
+  width: 100px;
+  height: 44px;
   object-fit: contain;
 }
 .drawer-top button {
@@ -884,7 +888,7 @@ svg {
 /* Homepage sections */
 .home-services {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 15px;
 }
 .home-service-card {
@@ -909,7 +913,7 @@ svg {
   justify-content: center;
   overflow: hidden;
   border-radius: 11px;
-  margin-bottom: 17px;
+  margin-bottom: 10px;
 }
 .service-image img {
   width: 100%;
@@ -925,14 +929,14 @@ svg {
   font-weight: 700;
   letter-spacing: -0.035em;
   line-height: 1.25;
-  margin: 0 0 9px;
-  min-height: 43px;
+  margin: 0 0 6px;
+  min-height: 0;
 }
 .home-service-card p {
-  font-size: 11px;
+  font-size: 14px;
   line-height: 1.6;
   color: #537061;
-  margin: 0 0 24px;
+  margin: 0 0 12px;
   flex: 1;
 }
 .home-service-card > span {
@@ -2483,7 +2487,7 @@ body:has(.booking-page) > .footer {
     padding: 17px;
   }
   .home-service-card p {
-    font-size: 12px;
+    font-size: 14px;
   }
   .home-service-card > span {
     font-size: 12px;
@@ -2800,19 +2804,19 @@ body:has(.booking-page) > .footer {
   .service-image {
     height: 103px;
     border-radius: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
   }
   .home-service-card h3 {
     font-size: 17px;
     line-height: 1.15;
-    min-height: 38px;
-    margin-bottom: 8px;
+    min-height: 0;
+    margin-bottom: 6px;
   }
   .home-service-card p {
-    font-size: 10px;
-    line-height: 1.55;
-    margin-bottom: 22px;
-    min-height: 30px;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+    min-height: 0;
   }
   .home-service-card > span {
     font-size: 11px;
@@ -2876,7 +2880,8 @@ body:has(.booking-page) > .footer {
     font-size: 47px;
   }
   .step-top > svg {
-    width: 24px;
+    width: 36px;
+    height: 36px;
   }
   .home-step h3 {
     font-size: 21px;
@@ -3334,16 +3339,17 @@ body:has(.booking-page) > .footer {
     font-size: 14px;
   }
   .quote-sidebar {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    display: contents;
   }
   .quote-summary {
+    grid-row: 1;
     padding: 24px;
   }
   .quote-summary h3 {
     font-size: 23px;
   }
   .quote-help {
+    grid-row: 3;
     padding: 22px;
   }
   .quote-help h3 {
@@ -5082,4 +5088,23 @@ body:has(.booking-page) > .footer {
   margin: 6px 0 0;
   color: var(--muted);
   font-size: 12px;
+}
+
+.home-service-card > .service-card-cta {
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--lime);
+  color: var(--forest);
+  text-align: center;
+  transition: background 0.2s;
+}
+.home-service-card:hover > .service-card-cta {
+  background: #00d975;
+}
+@media (max-width: 767px) {
+  .home-service-card > .service-card-cta {
+    padding-inline: 6px;
+  }
 }

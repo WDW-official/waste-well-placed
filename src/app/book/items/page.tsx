@@ -1,8 +1,8 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BookingShell } from "@/components/booking-shell";
 import { ITEMS } from "@/lib/constants";
 import { loadDraft, saveDraft, type BookingDraft } from "@/lib/booking-client";
@@ -26,14 +26,42 @@ const photos: Record<string, string> = {
   General: "general-waste",
 };
 export default function Items() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container section" role="status">
+          Loading items…
+        </div>
+      }
+    >
+      <ItemsContent />
+    </Suspense>
+  );
+}
+
+function ItemsContent() {
   const [draft, setDraft] = useState<BookingDraft | null>(null);
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("All");
+  const searchParams = useSearchParams();
   const router = useRouter();
   useEffect(() => {
     setDraft({ ...loadDraft(), kind: "items" });
   }, []);
   const categories = ["All", ...new Set(ITEMS.map((item) => item.category))];
+  const category =
+    categories.find(
+      (name) =>
+        name.toLowerCase() === searchParams.get("category")?.toLowerCase(),
+    ) ?? "All";
+
+  function setCategory(name: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (name === "All") params.delete("category");
+    else params.set("category", name);
+    const query = params.toString();
+    router.replace(`/book/items${query ? `?${query}` : ""}`, { scroll: false });
+  }
+
   const found = useMemo(
     () =>
       ITEMS.filter(

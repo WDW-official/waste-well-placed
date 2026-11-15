@@ -380,7 +380,7 @@ export default function Details() {
                     {index === 1 && (
                       <form onSubmit={(event) => advance(event, 1)}>
                         <p className="quote-intro">
-                          Where are we making room? Add the full collection
+                          Add the full collection
                           address.
                         </p>
                         <div className="form-grid">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Check } from "lucide-react";
+import { Check } from "lucide-react";
+import { BookingBack } from "@/components/booking-back";
 
 export function BookingShell({
   step,
@@ -25,9 +26,7 @@ export function BookingShell({
     <div className="booking-page">
       <header className="booking-header">
         <div className="booking-header-inner">
-          <Link href={back} className="booking-back" aria-label="Go back">
-            <ArrowLeft size={23} />
-          </Link>
+          <BookingBack fallback={back} />
           <span>{steps[step] || "Photo quote"}</span>
           <Link
             href="/"

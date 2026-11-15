@@ -41,7 +41,34 @@ export const SERVICES = [
     image: "/images/house.jpg",
     icon: "House",
   },
+  {
+    slug: "construction-waste",
+    title: "Construction waste",
+    subtitle: "Building debris, timber and renovation waste",
+    image: "/images/general-waste.jpg",
+    icon: "Shovel",
+  },
+  {
+    slug: "garden-waste",
+    title: "Garden waste",
+    subtitle: "Garden cuttings, branches and green waste",
+    image: "/images/general-waste.jpg",
+    icon: "Leaf",
+  },
 ];
+export const ITEM_SERVICE_CATEGORIES: Record<string, string> = {
+  furniture: "Furniture",
+  sofas: "Sofas",
+  appliances: "Appliances",
+};
+
+export function itemBookingHref(serviceSlug: string) {
+  const category = ITEM_SERVICE_CATEGORIES[serviceSlug];
+  return category
+    ? `/book/items?category=${encodeURIComponent(category)}`
+    : "/book/items";
+}
+
 export const LOADS = [
   {
     key: "mini",

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { HeroBooking } from "@/components/hero-booking";
-import { SERVICES, DEFAULT_FAQS } from "@/lib/constants";
+import { SERVICES, DEFAULT_FAQS, itemBookingHref } from "@/lib/constants";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -14,6 +14,7 @@ import {
   MessageCircle,
   Check,
   ClipboardCheck,
+  MousePointerClick,
   Armchair,
   ShieldCheck,
 } from "lucide-react";
@@ -30,12 +31,12 @@ export default function Home() {
               <span className="status-dot" /> A FRESH START FOR YOUR SPACE
             </span>
             <h1>
-              Goodbye clutter.
+              Rubbish removal for your
               <br />
-              Hello, <span>breathing room.</span>
+              <span>home or business.</span>
             </h1>
             <p>
-              Rubbish removal for your home or business.
+              {/* Rubbish removal for your home or business. */}
               <br className="desktop-break" /> Simply booked. Thoughtfully
               collected.
             </p>
@@ -78,7 +79,7 @@ export default function Home() {
             <HeroBooking />
           </div>
         </div>
-        <div className="container">
+        {/* <div className="container">
           <div className="brand-strip">
             <span className="brand-strip-icon">
               <Recycle size={28} />
@@ -91,7 +92,7 @@ export default function Home() {
               Meet your fresh start <ArrowUpRight size={17} />
             </Link>
           </div>
-        </div>
+        </div> */}
       </section>
 
       <section className="home-section" id="services">
@@ -117,11 +118,16 @@ export default function Home() {
                 className="home-service-card"
                 key={service.slug}
                 href={
-                  i >= 4
-                    ? "/business/enquire"
+                  [
+                    "office",
+                    "house",
+                    "construction-waste",
+                    "garden-waste",
+                  ].includes(service.slug)
+                    ? "/book/photo-quote"
                     : i === 0
                       ? "/book/load"
-                      : "/book/items"
+                      : itemBookingHref(service.slug)
                 }
               >
                 <div className="service-image">
@@ -135,8 +141,12 @@ export default function Home() {
                 </div>
                 <h3>{i === 0 ? "Rubbish clearance" : service.title}</h3>
                 <p>{service.subtitle}</p>
-                <span>
-                  {i >= 4 ? "Enquire now" : "Book a collection"}
+                <span className="service-card-cta">
+                  {["office", "house"].includes(service.slug)
+                    ? "Get a quote"
+                    : i >= 4
+                      ? "Enquire now"
+                      : "Book a collection"}
                   <ArrowRight size={17} />
                 </span>
               </Link>
@@ -172,7 +182,7 @@ export default function Home() {
 
       <section className="home-section steps-section" id="how-it-works">
         <div className="container">
-          <span className="eyebrow">SMALL EFFORT. BIG DIFFERENCE.</span>
+          {/* <span className="eyebrow">SMALL EFFORT. BIG DIFFERENCE.</span> */}
           <h2 className="section-title">
             Ready. Set. <span>Clear.</span>
           </h2>
@@ -182,7 +192,7 @@ export default function Home() {
           <div className="home-steps">
             {[
               {
-                Icon: CalendarDays,
+                Icon: MousePointerClick,
                 title: "A few clicks. All booked.",
                 description:
                   "Choose your items or load size, add your address and pick an available collection time.",
@@ -203,7 +213,7 @@ export default function Home() {
               <article className="home-step" key={title}>
                 <div className="step-top">
                   <span>0{i + 1}</span>
-                  <Icon size={27} strokeWidth={1.4} />
+                  <Icon size={44} strokeWidth={1.4} />
                 </div>
                 <h3>{title}</h3>
                 <p>{description}</p>
@@ -213,7 +223,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="home-section">
+      {/* <section className="home-section">
         <div className="container editorial-row">
           <div
             className="booking-illustration"
@@ -291,7 +301,7 @@ export default function Home() {
             </Link>
           </div>
         </div>
-      </section>
+      </section> */}
 
       <section className="home-section">
         <div className="container editorial-row editorial-reverse">
@@ -320,7 +330,7 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <div className="care-panel">
+          {/* <div className="care-panel">
             <span className="care-panel-word">
               A little
               <br />
@@ -340,7 +350,7 @@ export default function Home() {
               </span>
             </div>
             <div className="care-circle" />
-          </div>
+          </div> */}
         </div>
       </section>
 

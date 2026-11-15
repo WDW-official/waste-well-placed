@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type SyntheticEvent } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown, ShoppingCart, ArrowRight } from "lucide-react";
 import { SERVICES } from "@/lib/constants";
@@ -24,6 +24,15 @@ export function Header() {
   function close() {
     dialog.current?.close();
     document.body.style.overflow = "";
+  }
+  function toggleCategory(event: SyntheticEvent<HTMLDetailsElement>) {
+    const opened = event.currentTarget;
+    if (!opened.open) return;
+    dialog.current
+      ?.querySelectorAll<HTMLDetailsElement>(".drawer-category[open]")
+      .forEach((category) => {
+        if (category !== opened) category.open = false;
+      });
   }
   if (
     pathname.startsWith("/book/") &&
@@ -64,7 +73,14 @@ export function Header() {
               </summary>
               <div className="nav-dropdown-panel">
                 {SERVICES.map((s) => (
-                  <Link key={s.slug} href={`/services/${s.slug}`}>
+                  <Link
+                    key={s.slug}
+                    href={
+                      ["office", "house"].includes(s.slug)
+                        ? "/book/photo-quote"
+                        : `/services/${s.slug}`
+                    }
+                  >
                     {s.title}
                     <ArrowRight size={15} />
                   </Link>
@@ -146,7 +162,11 @@ export function Header() {
               </div>
               <ArrowRight size={18} />
             </Link>
-            <details className="drawer-category">
+            <details
+              className="drawer-category"
+              name="drawer-services"
+              onToggle={toggleCategory}
+            >
               <summary>
                 <Image src="/images/office.jpg" alt="" width={85} height={65} />
                 <div>
@@ -156,9 +176,44 @@ export function Header() {
                 <ChevronDown size={19} />
               </summary>
               <div className="drawer-subservices">
-                {SERVICES.slice(4).map((s) => (
+                {SERVICES.filter((s) => ["house", "office"].includes(s.slug)).map(
+                  (s) => (
+                    <Link
+                      href="/book/photo-quote"
+                      key={s.slug}
+                      onClick={close}
+                    >
+                      <Image src={s.image} alt="" width={120} height={90} />
+                      {s.title}
+                    </Link>
+                  ),
+                )}
+              </div>
+            </details>
+            <details
+              className="drawer-category"
+              name="drawer-services"
+              onToggle={toggleCategory}
+            >
+              <summary>
+                <Image
+                  src="/images/general-waste.jpg"
+                  alt=""
+                  width={85}
+                  height={65}
+                />
+                <div>
+                  <strong>Construction &amp; garden waste</strong>
+                  <span>Clear your building site or outdoor space.</span>
+                </div>
+                <ChevronDown size={19} />
+              </summary>
+              <div className="drawer-subservices">
+                {SERVICES.filter((s) =>
+                  ["construction-waste", "garden-waste"].includes(s.slug),
+                ).map((s) => (
                   <Link
-                    href={`/services/${s.slug}`}
+                    href="/book/photo-quote"
                     key={s.slug}
                     onClick={close}
                   >
