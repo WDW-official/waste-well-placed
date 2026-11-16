@@ -457,7 +457,7 @@ export default function Home() {
       <section className="home-section home-faq">
         <div className="container faq-layout">
           <div>
-            <span className="eyebrow">LET’S CLEAR THINGS UP</span>
+            {/* <span className="eyebrow">LET’S CLEAR THINGS UP</span> */}
             <h2 className="section-title">
               Good questions.
               <br />

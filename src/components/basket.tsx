@@ -63,7 +63,7 @@ export function FloatingActions() {
             <X size={18} />
           </button>
           {/* <span className="eyebrow">A LITTLE HELP GOES A LONG WAY</span> */}
-          {/* <h3>Let’s clear things up.</h3> */}
+          <h3>Let’s clear things up.</h3>
           <p>Questions about your collection? We’re happy to help.</p>
           <a className="btn btn-dark" href={phoneHref}>
             <Phone size={17} />
