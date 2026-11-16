@@ -28,15 +28,15 @@ export default function Home() {
       >
         <div className="container home-hero-grid">
           <div className="hero-intro">
-            <span className="eyebrow hero-eyebrow">
+            {/* <span className="eyebrow hero-eyebrow">
               <span className="status-dot" /> A FRESH START FOR YOUR SPACE
-            </span>
+            </span> */}
             <h1>
               Rubbish removal for your
               <br />
               <span>home or business.</span>
             </h1>
-            <p>Simply booked. Thoughtfully collected.</p>
+            <p>Simply book, and we'll collect.</p>
             <div className="hero-benefits">
               <span>
                 <CalendarDays size={17} />
@@ -100,8 +100,7 @@ export default function Home() {
                 What can we take off your hands?
               </h2>
               <p className="section-description">
-                One bulky item or a whole new beginning. We’ll help you clear
-                it.
+                One bulky item or a whole lot of waste, we'll clear it and dispose it properly
               </p>
             </div>
             <Link className="text-link" href="/services">
@@ -411,7 +410,7 @@ export default function Home() {
                 />
                 <h3>{title}</h3>
                 <p>{text}</p>
-                <span>{tag}</span>
+                {/* <span>{tag}</span> */}
               </article>
             ))}
           </div>
@@ -421,11 +420,11 @@ export default function Home() {
       <section className="home-section">
         <div className="container planet-panel">
           <div>
-            <span className="eyebrow">LESS LEFT BEHIND</span>
+            {/* <span className="eyebrow">LESS LEFT BEHIND</span> */}
             <h2 className="section-title">
-              Your unwanted things.
+              How we clear and 
               <br />
-              Our thoughtful approach.
+              dispose your waste.
             </h2>
             <p>
               Clearing your space should feel good. We focus on responsible

@@ -4,7 +4,11 @@ import Image from "next/image";
 import { useEffect, useRef, type SyntheticEvent } from "react";
 import { usePathname } from "next/navigation";
 import { Menu, X, ChevronDown, ShoppingCart, ArrowRight } from "lucide-react";
-import { SERVICE_IMAGES } from "@/lib/images";
+import {
+  SERVICE_IMAGES,
+  WASTE_MENU_IMAGE,
+  WASTE_SUBMENU_IMAGE,
+} from "@/lib/images";
 import { SERVICES } from "@/lib/constants";
 import { useBasket } from "./basket";
 
@@ -200,7 +204,7 @@ export function Header() {
             >
               <summary>
                 <Image
-                  src={SERVICE_IMAGES["construction-waste"]}
+                  src={WASTE_MENU_IMAGE}
                   alt=""
                   width={85}
                   height={65}
@@ -216,7 +220,12 @@ export function Header() {
                   ["construction-waste", "garden-waste"].includes(s.slug),
                 ).map((s) => (
                   <Link href="/book/photo-quote" key={s.slug} onClick={close}>
-                    <Image src={s.image} alt="" width={120} height={90} />
+                    <Image
+                      src={WASTE_SUBMENU_IMAGE}
+                      alt=""
+                      width={120}
+                      height={90}
+                    />
                     {s.title}
                   </Link>
                 ))}

@@ -2,6 +2,9 @@ const cloudinary = "https://res.cloudinary.com/cfgipbsv/image/upload";
 
 export const HERO_IMAGE = `${cloudinary}/v1794782510/WhatsApp_Image_2026-11-14_at_6.04.02_PM.jpg`;
 
+export const WASTE_MENU_IMAGE = `${cloudinary}/v1794780819/Main_Menu_Construction_and_Garden_Waste_1x1.png`;
+export const WASTE_SUBMENU_IMAGE = `${cloudinary}/v1794819530/Garden_Waste_01_Loose_Cuttings_1x1.png`;
+
 export const SERVICE_IMAGES: Record<string, string> = {
   "general-waste": `${cloudinary}/v1794780839/Section_02_Rubbish_Clearance.png`,
   furniture: `${cloudinary}/v1794780829/Section_02_Furniture_Removal.png`,
@@ -9,8 +12,8 @@ export const SERVICE_IMAGES: Record<string, string> = {
   appliances: `${cloudinary}/v1794780669/Section_02_Appliance_Removal.png`,
   office: `${cloudinary}/v1794780857/Section_02_Office_Clearance.png`,
   house: `${cloudinary}/v1794780867/Section_02_House_Clearance.png`,
-  "construction-waste": `${cloudinary}/v1794780819/Main_Menu_Construction_and_Garden_Waste_1x1.png`,
-  "garden-waste": `${cloudinary}/v1794780819/Main_Menu_Construction_and_Garden_Waste_1x1.png`,
+  "construction-waste": `${cloudinary}/v1794819499/Garden_Waste_02_Cuttings_in_Garden_Sacks_1x1.png`,
+  "garden-waste": `${cloudinary}/v1794819499/Garden_Waste_02_Cuttings_in_Garden_Sacks_1x1.png`,
 };
 
 export const ITEM_IMAGES: Record<string, string> = {
