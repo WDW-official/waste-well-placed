@@ -3017,7 +3017,7 @@ body:has(.booking-page) > .footer {
   .expectation-card p {
     font-size: 12px;
     line-height: 1.7;
-    margin-bottom: 25px;
+    margin-bottom: 0px;
   }
   .expectation-card > span {
     font-size: 7px;
