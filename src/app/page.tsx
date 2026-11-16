@@ -36,7 +36,7 @@ export default function Home() {
               <br />
               <span>home or business.</span>
             </h1>
-            <p>Simply book, and we'll collect.</p>
+            <p>Simply book, and we&apos;ll collect.</p>
             <div className="hero-benefits">
               <span>
                 <CalendarDays size={17} />
@@ -100,7 +100,8 @@ export default function Home() {
                 What can we take off your hands?
               </h2>
               <p className="section-description">
-                One bulky item or a whole lot of waste, we'll clear it and dispose it properly
+                One bulky item or a whole lot of waste, we&apos;ll clear it and
+                dispose it properly
               </p>
             </div>
             <Link className="text-link" href="/services">
@@ -398,7 +399,7 @@ export default function Home() {
                 text: "Responsible waste handling and collection records in your account.",
                 tag: "THOUGHTFULLY HANDLED",
               },
-            ].map(({ image, title, text, tag }) => (
+            ].map(({ image, title, text }) => (
               <article key={title} className="expectation-card">
                 <Image
                   className="expectation-art"
