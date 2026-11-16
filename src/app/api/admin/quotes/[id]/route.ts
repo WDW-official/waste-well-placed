@@ -1,21 +1,24 @@
-import { getSession, isStaff } from "@/lib/auth";
-import { connectDB } from "@/lib/db";
-import { Quote, Audit } from "@/lib/models";
-import { sendEmail } from "@/lib/notifications";
 import { z } from "zod";
-import { ok, fail, errorResponse, ensureSameOrigin } from "@/lib/http";
-import mongoose from "mongoose";
+import { connectDB } from "@/lib/db";
+import { Quote } from "@/lib/models";
+import {
+  requireUser,
+  requireCondition,
+  newToken,
+  hashToken,
+} from "@/lib/operations/security";
+import { objectId, pence } from "@/lib/operations/validation";
+import { audit, notify } from "@/lib/operations/events";
+import { ensureSameOrigin, errorResponse, fail, ok } from "@/lib/http";
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   if (!ensureSameOrigin(req)) return fail("Invalid origin", 403);
-  const u = await getSession();
-  if (!u || !isStaff(u.role)) return fail("Forbidden", 403);
   try {
-    const { id } = await params;
-    if (!mongoose.isValidObjectId(id)) return fail("Invalid id");
-    const patch = z
+    const user = await requireUser("operations");
+    const id = objectId.parse((await params).id);
+    const data = z
       .object({
         status: z.enum([
           "reviewing",
@@ -23,48 +26,114 @@ export async function PATCH(
           "rejected",
           "expired",
         ]),
-        priceMinor: z.number().int().min(0).optional(),
-        vatMinor: z.number().int().min(0).optional(),
+        version: z.number().int().nonnegative(),
+        priceMinor: pence.optional(),
+        lineItems: z
+          .array(
+            z.object({
+              description: z.string().min(1).max(300),
+              qty: z.number().int().min(1).max(100),
+              unitMinor: pence,
+            }),
+          )
+          .min(1)
+          .max(40)
+          .optional(),
+        vatMinor: pence.optional(),
         validUntil: z.string().datetime().optional(),
+        note: z.string().max(1000).default(""),
       })
       .parse(await req.json());
-    await connectDB();
-    const fields = {
-      status: patch.status,
-      ...(patch.priceMinor !== undefined
-        ? {
-            priceMinor: patch.priceMinor,
-            totalMinor: patch.priceMinor + (patch.vatMinor || 0),
-          }
-        : {}),
-      ...(patch.vatMinor !== undefined ? { vatMinor: patch.vatMinor } : {}),
-      ...(patch.validUntil ? { validUntil: new Date(patch.validUntil) } : {}),
-    };
-    const q = await Quote.findByIdAndUpdate(
-      id,
-      {
-        $set: fields,
-        $push: {
-          events: { action: patch.status, actorId: u.id, at: new Date() },
-        },
-      },
-      { new: true },
-    );
-    if (!q) return fail("Not found", 404);
-    await Audit.create({
-      actorId: u.id,
-      action: "quote.updated",
-      entity: "quote",
-      entityId: id,
-    });
-    if (patch.status === "awaiting_customer" && q.customer?.email)
-      await sendEmail(
-        q.customer.email,
-        "Your Waste Well Placed quotation is ready",
-        `<p>Your quote reference ${q.reference} has been reviewed. Please contact our team to confirm acceptance and a collection slot.</p>`,
+    if (data.status === "awaiting_customer")
+      requireCondition(
+        data.priceMinor &&
+          data.vatMinor !== undefined &&
+          data.validUntil &&
+          new Date(data.validUntil).getTime() > Date.now(),
+        "A price, VAT amount and future expiry are required",
       );
-    return ok({ updated: true, quote: q });
-  } catch (e) {
-    return errorResponse(e);
+    if (data.status === "awaiting_customer")
+      requireCondition(
+        data.lineItems &&
+          data.lineItems.reduce(
+            (sum, line) => sum + line.qty * line.unitMinor,
+            0,
+          ) === data.priceMinor,
+        "Itemised charges must match the collection price",
+      );
+    const db = await connectDB();
+    const token = newToken();
+    await db.connection.transaction(async (session) => {
+      const revision =
+        data.status === "awaiting_customer"
+          ? {
+              priceMinor: data.priceMinor!,
+              vatMinor: data.vatMinor!,
+              totalMinor: data.priceMinor! + data.vatMinor!,
+              validUntil: new Date(data.validUntil!),
+              actorId: user.id,
+              at: new Date(),
+              lineItems: data.lineItems,
+            }
+          : undefined;
+      const quote = await Quote.findOneAndUpdate(
+        {
+          _id: id,
+          version: data.version,
+          status: { $in: ["new", "reviewing", "awaiting_customer"] },
+        },
+        {
+          $set: {
+            status: data.status,
+            ...(revision
+              ? {
+                  lineItems: revision.lineItems,
+                  priceMinor: revision.priceMinor,
+                  vatMinor: revision.vatMinor,
+                  totalMinor: revision.totalMinor,
+                  validUntil: revision.validUntil,
+                  accessTokenHash: hashToken(token),
+                  accessTokenExpiresAt: new Date(Date.now() + 30 * 86400_000),
+                }
+              : {}),
+          },
+          $inc: { version: 1 },
+          $push: {
+            events: { action: data.status, actorId: user.id, at: new Date() },
+            ...(revision ? { revisions: revision } : {}),
+          },
+        },
+        { new: true, session },
+      );
+      requireCondition(
+        quote,
+        "Quote changed or cannot be edited. Refresh and try again.",
+        409,
+      );
+      await audit(
+        user.id,
+        `quote.${data.status}`,
+        id,
+        { version: data.version, note: data.note },
+        session,
+      );
+      if (revision)
+        await notify(
+          {
+            key: `quote:${id}:issued:${quote.version}`,
+            event: "quote_issued",
+            reference: quote.reference ?? id,
+            subject: "Your Waste Well Placed quote is ready",
+            message: `Your quotation ${quote.reference} is ready to review. It expires on ${revision.validUntil.toLocaleDateString("en-GB", { timeZone: "Europe/London" })}.`,
+            href: `/quote/${id}?token=${token}`,
+            email: quote.customer?.email ?? undefined,
+            recipientId: quote.ownerId ? String(quote.ownerId) : undefined,
+          },
+          session,
+        );
+    });
+    return ok({ updated: true });
+  } catch (error) {
+    return errorResponse(error);
   }
 }

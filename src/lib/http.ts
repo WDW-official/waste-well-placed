@@ -7,6 +7,8 @@ export function fail(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 export function errorResponse(e: unknown) {
+  if (e instanceof Error && "status" in e && typeof e.status === "number")
+    return fail(e.message, e.status);
   if (e instanceof ZodError)
     return fail(
       e.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; "),

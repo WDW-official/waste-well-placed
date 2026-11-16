@@ -489,6 +489,11 @@ export default function Home() {
           <Link href="/book" className="btn btn-primary">
             Book your collection <ArrowRight size={20} />
           </Link>
+          <p className="mt-5 text-sm">
+            <Link href="/work-with-us" className="underline">
+              Have a suitable vehicle? Apply to drive with us.
+            </Link>
+          </p>
           <Recycle className="closing-mark" aria-hidden="true" />
         </div>
       </section>

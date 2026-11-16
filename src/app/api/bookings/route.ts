@@ -4,6 +4,10 @@ import { findZone } from "@/lib/coverage";
 import { priceEstimate } from "@/lib/pricing";
 import { connectDB } from "@/lib/db";
 import { Booking, Hold, Slot, Audit } from "@/lib/models";
+import { attachPhotos } from "@/lib/operations/assets";
+import { notifyStaff } from "@/lib/operations/events";
+import { LOADS } from "@/lib/constants";
+import { requireCondition } from "@/lib/operations/security";
 import { newRef } from "@/lib/utils";
 import { ok, errorResponse, fail, ensureSameOrigin } from "@/lib/http";
 export async function GET() {
@@ -65,38 +69,87 @@ export async function POST(req: Request) {
     });
     if (!slot) return fail("Slot is no longer available", 409);
     const estimate = priceEstimate(data, zone.surchargeMinor);
-    const booked = await Booking.create({
-      reference: newRef(),
-      userId: user.id,
-      kind: data.kind,
-      items: estimate.lines.map((x, i) => ({
-        key: data.kind === "items" ? data.items[i]?.key : data.loadKey,
-        title: x.title,
-        qty: x.qty,
-        unitMinor: x.unitMinor,
-      })),
-      contact: data.contact,
-      photos: data.photos,
-      loadKey: data.kind === "load" ? data.loadKey : null,
-      address: data.address,
-      slotId: slot._id,
-      holdId: hold._id,
-      scheduledAt: slot.start,
-      price: estimate,
-      paymentStatus: "pending",
-      status: "pending_payment",
-      events: [{ status: "pending_payment", at: new Date(), by: user.id }],
-      idempotencyKey: data.idempotencyKey,
-    });
-    await Hold.updateOne(
-      { _id: hold.id, status: "active" },
-      { $set: { status: "consumed" } },
-    );
-    await Audit.create({
-      actorId: user.id,
-      action: "booking.created",
-      entity: "booking",
-      entityId: String(booked.id),
+    const db = await connectDB();
+    const booked = await db.connection.transaction(async (session) => {
+      const claimed = await Hold.updateOne(
+        { _id: hold._id, status: "active", expiresAt: { $gt: new Date() } },
+        { $set: { status: "consumed" } },
+        { session },
+      );
+      requireCondition(
+        claimed.modifiedCount,
+        "This slot hold was already used or expired",
+        409,
+      );
+      const [booked] = await Booking.create(
+        [
+          {
+            reference: newRef(),
+            userId: user.id,
+            kind: data.kind,
+            source: data.kind,
+            expectedWeightKg:
+              data.kind === "load"
+                ? LOADS.find((load) => load.key === data.loadKey)?.weight
+                : undefined,
+            expectedVolumeM3:
+              data.kind === "load"
+                ? LOADS.find((load) => load.key === data.loadKey)?.volume
+                : undefined,
+            items: estimate.lines.map((x, i) => ({
+              key: data.kind === "items" ? data.items[i]?.key : data.loadKey,
+              title: x.title,
+              qty: x.qty,
+              unitMinor: x.unitMinor,
+            })),
+            contact: data.contact ?? {
+              name: user.name,
+              email: user.email,
+              phone: user.phone,
+            },
+            photos: data.photos,
+            loadKey: data.kind === "load" ? data.loadKey : null,
+            address: data.address,
+            slotId: slot._id,
+            holdId: hold._id,
+            scheduledAt: slot.start,
+            price: estimate,
+            paymentStatus: "pending",
+            status: "pending_payment",
+            events: [
+              { status: "pending_payment", at: new Date(), by: user.id },
+            ],
+            idempotencyKey: data.idempotencyKey,
+          },
+        ],
+        { session },
+      );
+      await attachPhotos(
+        data.photos ?? [],
+        user.id,
+        { bookingId: String(booked._id) },
+        session,
+      );
+      await Audit.create(
+        [
+          {
+            actorId: user.id,
+            action: "booking.created",
+            entity: "booking",
+            entityId: String(booked.id),
+          },
+        ],
+        { session },
+      );
+      await notifyStaff(
+        `booking:${booked._id}:created`,
+        "booking_created",
+        booked.reference ?? "",
+        "A collection has been created and is awaiting payment.",
+        `/admin/jobs/${booked._id}`,
+        session,
+      );
+      return booked;
     });
     return ok(
       {

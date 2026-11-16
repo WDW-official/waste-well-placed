@@ -1,3 +1,4 @@
+import { photoReference } from "@/lib/asset-reference";
 import { z } from "zod";
 export const postcode = z
   .string()
@@ -50,14 +51,7 @@ export const quoteRequestSchema = z.object({
       parking: z.string().trim().max(500).default(""),
     })
     .default({}),
-  photos: z
-    .array(
-      z.object({
-        publicId: z.string().startsWith("waste-well-placed/"),
-        secureUrl: z.string().url().startsWith("https://res.cloudinary.com/"),
-      }),
-    )
-    .max(8),
+  photos: z.array(photoReference).max(8),
   consent: z.literal(true),
 });
 export const estimateSchema = z.discriminatedUnion("kind", [
@@ -94,15 +88,7 @@ export const bookingSchema = estimateSchema.and(
         whatsapp: z.boolean(),
       })
       .optional(),
-    photos: z
-      .array(
-        z.object({
-          publicId: z.string().startsWith("waste-well-placed/"),
-          secureUrl: z.string().url().startsWith("https://res.cloudinary.com/"),
-        }),
-      )
-      .max(8)
-      .optional(),
+    photos: z.array(photoReference).max(8).optional(),
     address: addressSchema,
     slotId: z.string().regex(/^[a-f\d]{24}$/i),
     holdId: z.string().regex(/^[a-f\d]{24}$/i),

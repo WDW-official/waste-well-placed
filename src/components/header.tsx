@@ -35,6 +35,7 @@ export function Header() {
         if (category !== opened) category.open = false;
       });
   }
+  if (pathname.startsWith("/driver")) return null;
   if (
     pathname.startsWith("/book/") &&
     !["/book/photo-quote", "/book/quote-received"].includes(pathname)

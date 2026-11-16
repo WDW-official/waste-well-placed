@@ -1,3 +1,4 @@
+import { AccountUpdates } from "@/components/account-updates";
 import Link from "next/link";
 import { getSession } from "@/lib/auth";
 import { DashLayout } from "@/components/dash-layout";
@@ -40,6 +41,7 @@ export default async function Account() {
           </Link>
         ))}
       </div>
+      <AccountUpdates />
       <div className="mt-10">
         <LogoutButton />
       </div>

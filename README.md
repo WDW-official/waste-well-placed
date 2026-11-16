@@ -111,3 +111,7 @@ Recommended: Vercel for Next.js, MongoDB Atlas for DB, Cloudinary for image host
 ## Reference
 
 Functional inspiration: https://www.litta.co.uk/ (public reference reviewed 6 Nov 2026). This project does not copy LITTA source code, content, licence numbers, reviews, pricing or trademarks.
+
+## Platform expansion v1.2
+
+The driver and operations expansion is documented in [the repository audit](docs/PLATFORM-V1.2-AUDIT.md) and [deployment, test and scope notes](docs/PLATFORM-V1.2-DEPLOYMENT.md). Start with the migration dry run and configure the private-document key before enabling driver applications. New public routes are `/work-with-us`, `/driver/apply` and `/driver/login`; role-gated operations remain under `/admin`.

@@ -22,6 +22,22 @@ export default function Privacy() {
           reconciliation and legal recordkeeping. Marketing messages require
           appropriate consent.
         </p>
+        <h2>Driver applications and collection evidence</h2>
+        <p>
+          Driver applications include identity and contact details, date of
+          birth, driving entitlement, vehicle and insurance information,
+          authorisation records, availability and supporting documents. We use
+          these for application review, eligibility checks, dispatch and
+          settlement administration. Check credentials are encrypted; identity
+          documents are restricted to the applicant and authorised reviewers.
+        </p>
+        <p>
+          Approved drivers see customer details only for their own accepted
+          collections. Pickup photographs and receiving-facility records are
+          reviewed before verified records are made available to customers. The
+          driver workspace does not currently collect live GPS location or bank
+          account details.
+        </p>
         <h2>Service providers and rights</h2>
         <p>
           Data may be processed using MongoDB Atlas, Cloudinary, Stripe and

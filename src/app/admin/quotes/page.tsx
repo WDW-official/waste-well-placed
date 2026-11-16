@@ -1,11 +1,9 @@
-import { AdminResource } from "@/components/admin-resource";
+import { OperationsLayout } from "@/components/operations-layout";
+import { OperationsDashboard } from "@/components/operations-dashboard";
 export default function Page() {
   return (
-    <AdminResource
-      title="Photo quotations"
-      name="quotes"
-      fields={["reference", "status", "priceMinor", "totalMinor", "createdAt"]}
-      editable={false}
-    />
+    <OperationsLayout title="Photo quotations">
+      <OperationsDashboard view="quotes" />
+    </OperationsLayout>
   );
 }

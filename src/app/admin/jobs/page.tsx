@@ -1,17 +1,9 @@
-import { AdminResource } from "@/components/admin-resource";
+import { OperationsLayout } from "@/components/operations-layout";
+import { OperationsDashboard } from "@/components/operations-dashboard";
 export default function Page() {
   return (
-    <AdminResource
-      title="Collection jobs"
-      name="bookings"
-      fields={[
-        "reference",
-        "status",
-        "paymentStatus",
-        "scheduledAt",
-        "assignedCrewId",
-      ]}
-      editable={true}
-    />
+    <OperationsLayout title="Collection jobs">
+      <OperationsDashboard view="jobs" />
+    </OperationsLayout>
   );
 }

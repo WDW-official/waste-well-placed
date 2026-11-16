@@ -1,3 +1,4 @@
+import { CollectionTimeline } from "@/components/collection-timeline";
 import { getSession } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Booking } from "@/lib/models";
@@ -44,7 +45,7 @@ export default async function Detail({
           <p className="mt-3">
             <strong>Payment:</strong> {b.paymentStatus}
           </p>
-          {b.status === "completed" && (
+          {["verified", "closed"].includes(b.status) && (
             <Link
               className="btn btn-primary mt-6"
               href={`/api/documents/${id}`}
@@ -54,18 +55,7 @@ export default async function Detail({
           )}
         </div>
         <div className="card p-7">
-          <h2 className="font-bold text-xl">Collection updates</h2>
-          <ol className="mt-5 space-y-5">
-            {(b.events || []).map((e, i) => (
-              <li key={i} className="border-l-4 pl-4 border-green-500">
-                <p className="font-bold capitalize">
-                  {e.status?.replaceAll("_", " ")}
-                </p>
-                <p className="text-sm muted">{e.note}</p>
-                <p className="text-xs muted">{e.at ? formatDate(e.at) : ""}</p>
-              </li>
-            ))}
-          </ol>
+          <CollectionTimeline id={id} />
         </div>
       </div>
     </DashLayout>

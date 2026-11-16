@@ -37,8 +37,8 @@ const changes = z.object({
   patch: z.record(z.unknown()),
 });
 const ALLOWED: { [key: string]: string[] } = {
-  bookings: ["assignedCrewId", "notes"],
-  quotes: ["status", "priceMinor", "vatMinor", "totalMinor", "validUntil"],
+  bookings: ["notes"],
+  quotes: [],
   zones: [
     "name",
     "prefixes",

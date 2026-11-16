@@ -87,42 +87,22 @@ export default function PhotoQuote() {
         }
         if (
           !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
-          file.size > 8_000_000
+          file.size > 3_000_000
         ) {
-          toast.error("Choose JPEG, PNG or WebP photos under 8 MB.");
+          toast.error("Choose JPEG, PNG or WebP photos under 3 MB.");
           continue;
         }
         setProgress(`Uploading ${file.name}…`);
-        const signed = await request<{
-          timestamp: number;
-          signature: string;
-          apiKey: string;
-          cloudName: string;
-          folder: string;
-        }>("/api/uploads/sign", { purpose: "quote" });
         const data = new FormData();
         data.append("file", file);
-        for (const [key, value] of Object.entries({
-          api_key: signed.apiKey,
-          timestamp: String(signed.timestamp),
-          signature: signed.signature,
-          folder: signed.folder,
-        }))
-          data.append(key, value);
-        const response = await fetch(
-          `https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`,
-          { method: "POST", body: data },
-        );
-        const photo = await response.json();
-        if (!response.ok)
-          throw new Error(
-            photo.error?.message ||
-              "Unable to upload this photo. Please try again.",
-          );
-        uploaded.push({
-          publicId: photo.public_id,
-          secureUrl: photo.secure_url,
+        data.append("purpose", "quote");
+        const response = await fetch("/api/uploads", {
+          method: "POST",
+          body: data,
         });
+        const photo = await response.json();
+        if (!response.ok) throw new Error(photo.error || "Photo upload failed");
+        uploaded.push({ publicId: photo.publicId, secureUrl: photo.secureUrl });
         setPhotos([...uploaded]);
       }
     } catch (err) {
@@ -145,7 +125,10 @@ export default function PhotoQuote() {
     setBusy(true);
     setError("");
     try {
-      const response = await request<{ reference: string }>("/api/quotes", {
+      const response = await request<{
+        reference: string;
+        trackingUrl: string;
+      }>("/api/quotes", {
         kind: "photo",
         name: form.name,
         email: form.email,
@@ -168,9 +151,7 @@ export default function PhotoQuote() {
         consent: form.consent,
       });
       toast.success("Your quote request is on its way.");
-      router.push(
-        `/book/quote-received?ref=${encodeURIComponent(response.reference)}`,
-      );
+      router.push(response.trackingUrl);
     } catch (err) {
       const message =
         err instanceof Error
@@ -317,7 +298,7 @@ export default function PhotoQuote() {
               {(uploading || photos.length > 0) && (
                 <p className="request-upload-status" role="status">
                   {progress ||
-                    `${photos.length} of 8 photos added. JPEG, PNG or WebP, up to 8 MB each.`}
+                    `${photos.length} of 8 photos added. JPEG, PNG or WebP, up to 3 MB each.`}
                 </p>
               )}
               {photos.length > 0 && (
@@ -326,6 +307,7 @@ export default function PhotoQuote() {
                     <div key={photo.publicId}>
                       <Image
                         src={photo.secureUrl}
+                        unoptimized={photo.secureUrl.startsWith("/api/assets/")}
                         alt={`Waste photo ${i + 1}`}
                         width={150}
                         height={150}

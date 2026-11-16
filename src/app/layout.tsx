@@ -10,11 +10,11 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   ),
   title: {
-    default: "Waste Well Placed | Responsible UK Waste Collection",
+    default: "Waste Well Placed | London Waste Collection",
     template: "%s | Waste Well Placed",
   },
   description:
-    "Book rubbish removal, furniture and appliance collections, and request clearance quotes with Waste Well Placed.",
+    "Book rubbish removal, furniture and appliance collections in London and surrounding areas with Waste Well Placed.",
   openGraph: { type: "website", siteName: "Waste Well Placed" },
 };
 export default function RootLayout({

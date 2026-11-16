@@ -9,7 +9,11 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "migrate:platform": "tsx scripts/migrate-platform.ts",
+    "seed:platform-test": "tsx scripts/seed-platform-test.ts",
+    "check:platform-ui": "tsx scripts/check-platform-ui.ts"
   },
   "dependencies": {
     "next": "^15.5.0",
@@ -44,6 +48,8 @@
     "vitest": "^3.2.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^15.5.0",
-    "@eslint/eslintrc": "^3.3.1"
+    "@eslint/eslintrc": "^3.3.1",
+    "mongodb-memory-server": "^11.3.0",
+    "playwright": "^1.65.1"
   }
 }

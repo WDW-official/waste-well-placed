@@ -1,40 +1,64 @@
-import { getSession, isStaff } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Booking } from "@/lib/models";
-import { fail } from "@/lib/http";
-import mongoose from "mongoose";
+import { Evidence, Facility } from "@/lib/operations/models";
+import { permitted } from "@/lib/operations/policy";
+import { objectId } from "@/lib/operations/validation";
+import { requireCondition } from "@/lib/operations/security";
+import { errorResponse } from "@/lib/http";
 export async function GET(
   _: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const u = await getSession();
-  if (!u) return fail("Unauthorized", 401);
-  const { id } = await params;
-  if (!mongoose.isValidObjectId(id)) return fail("Invalid document");
-  await connectDB();
-  const b = await Booking.findById(id).lean();
-  if (!b) return fail("Not found", 404);
-  if (String(b.userId) !== u.id && !isStaff(u.role))
-    return fail("Forbidden", 403);
-  if (b.status !== "completed" || !b.evidence?.transferNoteId)
-    return fail("Completion document not available", 404);
-  const text = [
-    "WASTE WELL PLACED - COLLECTION RECORD",
-    "NOT AN OFFICIAL WASTE TRANSFER NOTE UNTIL COMPLETED AND AUTHORISED",
-    `Reference: ${b.reference}`,
-    `Collection date: ${b.scheduledAt ? new Date(b.scheduledAt).toISOString() : "Not recorded"}`,
-    `Address: ${b.address?.line1}, ${b.address?.city}, ${b.address?.postcode}`,
-    `Description: ${b.evidence.wasteDescription || "Not recorded"}`,
-    `EWC code: ${b.evidence.ewcCode || "Not recorded"}`,
-    `Weight: ${b.evidence.weightKg ?? "Not recorded"} kg`,
-    `Record reference: ${b.evidence.transferNoteId}`,
-    "Carrier legal identity, licence, transfer signatures and destination must be verified before issuing a statutory WTN.",
-  ].join("\n");
-  return new Response(text, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${b.reference}-collection-record.txt"`,
-      "Cache-Control": "no-store",
-    },
-  });
+  try {
+    const user = await getSession();
+    requireCondition(user, "Sign in to continue", 401);
+    await connectDB();
+    const id = objectId.parse((await params).id);
+    const booking = await Booking.findById(id).lean();
+    requireCondition(booking, "Collection not found", 404);
+    requireCondition(
+      String(booking.userId) === user.id ||
+        permitted(user.role, "verify") ||
+        permitted(user.role, "operations"),
+      "Not permitted",
+      403,
+    );
+    const evidence = await Evidence.findOne({
+      bookingId: id,
+      status: "verified",
+    }).lean();
+    requireCondition(
+      evidence && ["verified", "closed"].includes(booking.status),
+      "Evidence has not been independently verified",
+      404,
+    );
+    if (evidence.transferNoteAssetId)
+      return Response.redirect(
+        new URL(`/api/assets/${evidence.transferNoteAssetId}`, _.url),
+      );
+    const facility = await Facility.findById(evidence.facilityId).lean();
+    const text = [
+      "WASTE WELL PLACED — VERIFIED COLLECTION RECORD",
+      "This collection summary is not a statutory waste transfer note.",
+      `Reference: ${booking.reference}`,
+      `Address: ${booking.address?.line1}, ${booking.address?.city}, ${booking.address?.postcode}`,
+      `Waste description: ${evidence.wasteDescription}`,
+      `Weight: ${evidence.weightKg ?? "Not recorded"} kg`,
+      `Facility: ${facility?.name ?? "Recorded privately"}`,
+      `Facility receipt: ${evidence.receiptNumber}`,
+      `Delivery time: ${evidence.deliveredAt?.toISOString() ?? "Recorded"}`,
+      `Staff verification: ${evidence.verifiedAt?.toISOString()}`,
+      "Facility delivery does not by itself establish recycling or diversion outcomes.",
+    ].join("\n");
+    return new Response(text, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Disposition": `attachment; filename="${booking.reference}-collection-record.txt"`,
+        "Cache-Control": "private, no-store",
+      },
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
 }

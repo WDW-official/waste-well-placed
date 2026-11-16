@@ -112,37 +112,23 @@ export default function Details() {
         }
         if (
           !["image/jpeg", "image/png", "image/webp"].includes(file.type) ||
-          file.size > 8_000_000
+          file.size > 3_000_000
         ) {
-          toast.error("Use JPEG, PNG or WebP images under 8 MB.");
+          toast.error("Use JPEG, PNG or WebP images under 3 MB.");
           continue;
         }
-        const signed = await request<{
-          timestamp: number;
-          signature: string;
-          apiKey: string;
-          cloudName: string;
-          folder: string;
-        }>("/api/uploads/sign", { purpose: "quote" });
         const data = new FormData();
         data.append("file", file);
-        for (const [key, value] of Object.entries({
-          api_key: signed.apiKey,
-          timestamp: String(signed.timestamp),
-          signature: signed.signature,
-          folder: signed.folder,
-        }))
-          data.append(key, value);
-        const response = await fetch(
-          `https://api.cloudinary.com/v1_1/${signed.cloudName}/image/upload`,
-          { method: "POST", body: data },
-        );
+        data.append("purpose", "quote");
+        const response = await fetch("/api/uploads", {
+          method: "POST",
+          body: data,
+        });
         const photo = await response.json();
-        if (!response.ok)
-          throw new Error(photo.error?.message || "Photo upload failed");
+        if (!response.ok) throw new Error(photo.error || "Photo upload failed");
         nextPhotos.push({
-          publicId: photo.public_id,
-          secureUrl: photo.secure_url,
+          publicId: photo.publicId,
+          secureUrl: photo.secureUrl,
         });
         update({ photos: [...nextPhotos] });
       }
@@ -380,8 +366,7 @@ export default function Details() {
                     {index === 1 && (
                       <form onSubmit={(event) => advance(event, 1)}>
                         <p className="quote-intro">
-                          Add the full collection
-                          address.
+                          Add the full collection address.
                         </p>
                         <div className="form-grid">
                           <div className="md:col-span-2">
@@ -531,7 +516,7 @@ export default function Details() {
                               : "Add your waste photos"}
                           </strong>
                           <span>
-                            JPEG, PNG or WebP · Up to 8 images · 8 MB each
+                            JPEG, PNG or WebP · Up to 8 images · 3 MB each
                           </span>
                         </label>
                         <input
@@ -553,6 +538,9 @@ export default function Details() {
                             <div key={photo.publicId}>
                               <Image
                                 src={photo.secureUrl}
+                                unoptimized={photo.secureUrl.startsWith(
+                                  "/api/assets/",
+                                )}
                                 alt="Your collection waste"
                                 width={140}
                                 height={140}

@@ -22,7 +22,8 @@ export function Footer() {
           </Link>
           <p className="text-green-100 max-w-sm">
             Thoughtful collection. Responsible disposal. Clear pricing and a
-            simpler booking experience for homes and businesses.
+            simpler booking experience for homes and businesses in London and
+            surrounding areas.
           </p>
           <p className="text-sm text-green-100">
             UK waste carrier registration and company credentials will appear
@@ -50,6 +51,8 @@ export function Footer() {
             ["Reviews", "/reviews"],
             ["Blog", "/blog"],
             ["About us", "/about"],
+            ["Work with us", "/work-with-us"],
+            ["Driver sign in", "/driver/login"],
           ].map(([n, h]) => (
             <Link key={h} className="block py-1 text-sm" href={h}>
               {n}

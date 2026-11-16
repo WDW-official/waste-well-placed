@@ -1,6 +1,6 @@
 "use client";
 import { PhoneInput } from "@/components/phone-input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -14,18 +14,39 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     }),
     [busy, setBusy] = useState(false);
   const router = useRouter();
+  const [nextPath, setNextPath] = useState("");
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get("next");
+    if (value && (value.startsWith("/book/") || value.startsWith("/quote/")))
+      setNextPath(value);
+  }, []);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     try {
-      await request(`/api/auth/${mode}`, form);
+      const result = await request<{ user?: { role?: string } }>(
+        `/api/auth/${mode}`,
+        form,
+      );
       toast.success(mode === "login" ? "Welcome back" : "Account created");
       router.refresh();
       const next = new URLSearchParams(window.location.search).get("next");
       router.push(
-        next && next.startsWith("/book/") && !next.startsWith("//")
+        next &&
+          (next.startsWith("/book/") || next.startsWith("/quote/")) &&
+          !next.startsWith("//")
           ? next
-          : "/account",
+          : result.user?.role === "driver"
+            ? "/driver"
+            : [
+                  "admin",
+                  "superadmin",
+                  "dispatcher",
+                  "finance",
+                  "compliance",
+                ].includes(result.user?.role ?? "")
+              ? "/admin"
+              : "/account",
       );
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Sign-in failed");
@@ -102,14 +123,20 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         {mode === "login" ? (
           <>
             New here?{" "}
-            <Link className="text-green-800 underline" href="/register">
+            <Link
+              className="text-green-800 underline"
+              href={`/register${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}`}
+            >
               Create an account
             </Link>
           </>
         ) : (
           <>
             Already have an account?{" "}
-            <Link className="text-green-800 underline" href="/login">
+            <Link
+              className="text-green-800 underline"
+              href={`/login${nextPath ? `?next=${encodeURIComponent(nextPath)}` : ""}`}
+            >
               Log in
             </Link>
           </>

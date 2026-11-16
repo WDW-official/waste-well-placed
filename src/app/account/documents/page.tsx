@@ -8,8 +8,7 @@ export default async function Documents() {
   await connectDB();
   const rows = await Booking.find({
     userId: u?.id,
-    status: "completed",
-    "evidence.transferNoteId": { $exists: true },
+    status: { $in: ["verified", "closed"] },
   })
     .select("reference")
     .lean();

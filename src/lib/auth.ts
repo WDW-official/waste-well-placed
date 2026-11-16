@@ -33,13 +33,14 @@ export async function getSession() {
     if (!payload.sub) return null;
     await connectDB();
     const user = await User.findById(payload.sub)
-      .select("_id name email role organizationId")
+      .select("_id name email phone role organizationId")
       .lean();
     if (!user) return null;
     return {
       id: String(user._id),
       name: user.name as string,
       email: user.email as string,
+      phone: user.phone ?? "",
       role: user.role as string,
       organizationId: user.organizationId ? String(user.organizationId) : null,
     };

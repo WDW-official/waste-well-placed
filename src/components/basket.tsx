@@ -48,7 +48,8 @@ export function FloatingActions() {
   const pathname = usePathname();
   const { count, href } = useBasket();
   const [support, setSupport] = useState(false);
-  if (/^\/(book\/|account|admin|crew|portal)/.test(pathname)) return null;
+  if (/^\/(book\/|account|admin|crew|driver|quote|portal)/.test(pathname))
+    return null;
   return (
     <div className={`floating-actions ${count ? "has-basket" : ""}`}>
       {support && (

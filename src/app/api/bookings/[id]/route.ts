@@ -21,7 +21,23 @@ export async function GET(
       !(user.role === "crew" && String(b.assignedCrewId) === user.id)
     )
       return fail("Forbidden", 403);
-    return ok({ booking: b });
+    return ok({
+      booking: isStaff(user.role)
+        ? b
+        : {
+            id: String(b._id),
+            reference: b.reference,
+            status: b.status,
+            paymentStatus: b.paymentStatus,
+            scheduledAt: b.scheduledAt,
+            address: b.address,
+            price: b.price,
+            events: b.events.map((event) => ({
+              status: event.status,
+              at: event.at,
+            })),
+          },
+    });
   } catch (e) {
     return errorResponse(e);
   }

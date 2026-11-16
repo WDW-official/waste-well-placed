@@ -9,6 +9,8 @@ export default function robots(): MetadataRoute.Robots {
           "/admin",
           "/account",
           "/crew",
+          "/driver",
+          "/quote",
           "/portal",
           "/api",
           "/book/checkout",
