@@ -36,11 +36,7 @@ export default function Home() {
               <br />
               <span>home or business.</span>
             </h1>
-            <p>
-              {/* Rubbish removal for your home or business. */}
-              <br className="desktop-break" /> Simply booked. Thoughtfully
-              collected.
-            </p>
+            <p>Simply booked. Thoughtfully collected.</p>
             <div className="hero-benefits">
               <span>
                 <CalendarDays size={17} />
