@@ -66,7 +66,7 @@ export function BookingShell({
           ))}
         </nav>
         <div className="booking-page-title">
-          <span className="eyebrow">YOUR NEXT FRESH START</span>
+          {/* <span className="eyebrow">YOUR NEXT FRESH START</span> */}
           <h1>{title}</h1>
           {desc && <p>{desc}</p>}
         </div>

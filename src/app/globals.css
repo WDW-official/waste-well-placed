@@ -2695,7 +2695,7 @@ body:has(.booking-page) > .footer {
     margin-bottom: 10px;
   }
   .hero-intro > p {
-    font-size: clamp(12px, 2.7vw, 15px);
+    font-size: clamp(14px, 4vw, 14px);
     text-shadow: none;
     line-height: 1.5;
     margin-bottom: 0;

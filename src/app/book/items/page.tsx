@@ -97,7 +97,7 @@ function ItemsContent() {
     <BookingShell
       step={0}
       title="A few things ready to go?"
-      desc="Find your items below. A sofa, a fridge, a fresh start—we’ll help you make room."
+      desc="Select the type of item you want to dispose, a sofa, a fridge, and we’ll come and collect it for you."
     >
       <div className="items-layout">
         <div className="items-main">
