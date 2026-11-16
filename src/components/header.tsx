@@ -8,6 +8,7 @@ import {
   SERVICE_IMAGES,
   WASTE_MENU_IMAGE,
   WASTE_SUBMENU_IMAGE,
+  CONSTRUCTION_SUBMENU_IMAGE,
 } from "@/lib/images";
 import { SERVICES } from "@/lib/constants";
 import { useBasket } from "./basket";
@@ -221,7 +222,11 @@ export function Header() {
                 ).map((s) => (
                   <Link href="/book/photo-quote" key={s.slug} onClick={close}>
                     <Image
-                      src={WASTE_SUBMENU_IMAGE}
+                      src={
+                        s.slug === "construction-waste"
+                          ? CONSTRUCTION_SUBMENU_IMAGE
+                          : WASTE_SUBMENU_IMAGE
+                      }
                       alt=""
                       width={120}
                       height={90}
