@@ -1,5 +1,8 @@
 const cloudinary = "https://res.cloudinary.com/cfgipbsv/image/upload";
 
+export const DRIVER_HERO_IMAGE = `${cloudinary}/v1794881553/Driver_images.png`;
+export const HOW_IT_WORKS_HERO_IMAGE = `${cloudinary}/v1794881729/how_it_works.png`;
+
 export const HERO_IMAGE = `${cloudinary}/v1794782510/WhatsApp_Image_2026-11-14_at_6.04.02_PM.jpg`;
 
 export const WASTE_MENU_IMAGE = `${cloudinary}/v1794780819/Main_Menu_Construction_and_Garden_Waste_1x1.png`;

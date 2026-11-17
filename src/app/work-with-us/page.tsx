@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Truck,
   ShieldCheck,
@@ -6,18 +7,35 @@ import {
   ClipboardCheck,
   ArrowRight,
 } from "lucide-react";
-import { PageTitle } from "@/components/page-title";
+import { DRIVER_HERO_IMAGE } from "@/lib/images";
 export const metadata = {
   title: "Drive with Waste Well Placed | London and surrounding areas",
 };
 export default function WorkWithUs() {
   return (
     <>
-      <PageTitle
-        eyebrow="WORK WITH US"
-        title="Drive with Waste Well Placed."
-        desc="Flexible collection work in London and surrounding areas. Apply with your vehicle, tell us when you are available, and complete verified waste collections."
-      />
+      <section className="driver-recruitment-hero" aria-labelledby="driver-hero-title">
+        <Image
+          className="driver-recruitment-background"
+          src={DRIVER_HERO_IMAGE}
+          alt="Waste Well Placed driver standing beside a collection vehicle"
+          fill
+          priority
+          sizes="100vw"
+        />
+        <div className="container driver-recruitment-content">
+          <span className="driver-recruitment-eyebrow">WORK WITH US</span>
+          <h1 id="driver-hero-title">
+            Drive with<br />
+            <span>Waste Well Placed.</span>
+          </h1>
+          <p>
+            Flexible collection work in London and surrounding areas. Apply with
+            your vehicle, tell us when you are available, and complete verified
+            waste collections.
+          </p>
+        </div>
+      </section>
       <section className="container section">
         <div className="grid md:grid-cols-2 gap-6">
           <div className="card p-7">

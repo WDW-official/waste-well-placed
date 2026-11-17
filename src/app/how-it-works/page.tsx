@@ -1,13 +1,26 @@
-import { PageTitle } from "@/components/page-title";
+import Image from "next/image";
+import { HOW_IT_WORKS_HERO_IMAGE } from "@/lib/images";
 import Link from "next/link";
 export const metadata = { title: "How it works" };
 export default function HowItWorks() {
   return (
     <>
-      <PageTitle
-        title="From clutter to clear in three steps"
-        desc="A simple, transparent booking process."
-      />
+      <section className="how-it-works-hero" aria-labelledby="how-it-works-title">
+        <Image
+          className="how-it-works-background"
+          src={HOW_IT_WORKS_HERO_IMAGE}
+          alt="Customer booking a collection on her phone beside items ready to go"
+          fill
+          priority
+          sizes="100vw"
+        />
+        <div className="container how-it-works-content">
+          <div>
+            <h1 id="how-it-works-title">From clutter to clear in three steps</h1>
+            <p>A simple, transparent booking process.</p>
+          </div>
+        </div>
+      </section>
       <div className="container section max-w-4xl">
         {[
           {
