@@ -5776,10 +5776,11 @@ body:has(.booking-page) > .footer {
       linear-gradient(180deg, transparent 72%, #f2f8f1 100%),
       linear-gradient(
         90deg,
-        #ffffffed 0%,
-        #ffffffd9 28%,
-        #ffffff40 54%,
-        transparent 78%
+        #fffffffa 0%,
+        #fffffff2 28%,
+        #ffffffa6 54%,
+        #ffffff59 78%,
+        #ffffff40 100%
       ),
       var(--hero-image);
     background-position: center 54%;
@@ -5789,7 +5790,7 @@ body:has(.booking-page) > .footer {
     padding-block: 0 24px;
   }
   .home-hero .hero-intro h1 {
-    width: 48%;
+    width: 62%;
     color: #003b29;
     font-size: clamp(23px, 7vw, 48px);
     font-weight: 800;
@@ -5805,6 +5806,7 @@ body:has(.booking-page) > .footer {
   }
   .home-hero .hero-heading-line {
     display: block;
+    white-space: nowrap;
   }
   .home-hero .hero-intro > p::before {
     content: "";

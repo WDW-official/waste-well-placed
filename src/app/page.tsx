@@ -39,9 +39,8 @@ export default function Home() {
             </span> */}
             <h1>
               <span className="hero-heading-lead">Clear space.</span>{" "}
-              <span className="hero-heading-line">We’ll take</span>{" "}
-              <span className="hero-heading-line">care of the</span>{" "}
-              <span className="hero-heading-line">waste.</span>
+              <span className="hero-heading-line">We’ll take care</span>{" "}
+              <span className="hero-heading-line">of the waste.</span>
             </h1>
             <p>
               Reliable rubbish removal for homes and businesses across London
