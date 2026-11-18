@@ -1,4 +1,4 @@
-import { LOADS, ITEMS } from "@/lib/constants";
+import { getLoad, ITEMS } from "@/lib/constants";
 import { type z } from "zod";
 import { estimateSchema } from "@/lib/validation";
 type Estimate = z.infer<typeof estimateSchema>;
@@ -6,7 +6,7 @@ export function priceEstimate(data: Estimate, zoneSurcharge = 0) {
   let subtotalMinor = 0;
   let lines: { title: string; qty: number; unitMinor: number }[] = [];
   if (data.kind === "load") {
-    const load = LOADS.find((l) => l.key === data.loadKey);
+    const load = getLoad(data.loadKey);
     if (!load) throw new Error("Unknown load size");
     subtotalMinor = load.base;
     lines = [{ title: load.title, qty: 1, unitMinor: load.base }];

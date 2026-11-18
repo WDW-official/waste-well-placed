@@ -1,10 +1,14 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { BookingShell } from "@/components/booking-shell";
 import { LoadIllustration } from "@/components/load-illustration";
-import { LOADS } from "@/lib/constants";
+import {
+  LOADS,
+  SPECIALIST_LOADS,
+  isSpecialistLoadService,
+} from "@/lib/constants";
 import { loadDraft, saveDraft, type BookingDraft } from "@/lib/booking-client";
 import { gbp } from "@/lib/utils";
 import {
@@ -39,22 +43,65 @@ const groups = [
 ];
 
 export default function Load() {
+  return (
+    <Suspense
+      fallback={
+        <p className="container section" role="status">
+          Loading collection sizes…
+        </p>
+      }
+    >
+      <LoadSelector />
+    </Suspense>
+  );
+}
+
+function LoadSelector() {
+  const params = useSearchParams();
+  const service = params.get("service");
+  const specialist = isSpecialistLoadService(service);
+  const serviceTitle =
+    service === "construction-waste" ? "Construction waste" : "Garden waste";
+  const serviceLoads = useMemo(
+    () => SPECIALIST_LOADS.filter((load) => load.service === service),
+    [service],
+  );
+  const availableGroups = useMemo(
+    () =>
+      specialist
+        ? serviceLoads.map((load) => ({
+            key: load.key,
+            title: load.sizeTitle,
+            description: `${load.volume} cubic yards · up to ${load.weight} kg`,
+            keys: [load.key],
+          }))
+        : groups,
+    [specialist, serviceLoads],
+  );
   const [draft, setDraft] = useState<BookingDraft | null>(null);
-  const [group, setGroup] = useState("small");
   const [visible, setVisible] = useState(0);
+  const loads = specialist ? serviceLoads : LOADS;
   const track = useRef<HTMLDivElement>(null);
   const router = useRouter();
   useEffect(() => {
     const saved = loadDraft();
     setDraft({ ...saved, kind: "load" });
-    setGroup(
-      groups.find((g) => g.keys.includes(saved.loadKey || "small"))?.key ||
-        "small",
-    );
-  }, []);
-  const loads = LOADS.filter((load) =>
-    groups.find((g) => g.key === group)!.keys.includes(load.key),
-  );
+    const savedIndex = saved.selected
+      ? loads.findIndex((load) => load.key === saved.loadKey)
+      : 0;
+    const index = Math.max(0, savedIndex);
+    setVisible(index);
+    const node = track.current;
+    const card = node?.children[index] as HTMLElement | undefined;
+    if (node && card)
+      node.scrollTo({
+        left: card.offsetLeft - (node.children[0] as HTMLElement).offsetLeft,
+        behavior: "instant",
+      });
+  }, [loads]);
+  const currentGroup =
+    availableGroups.find((g) => g.keys.includes(loads[visible]?.key)) ??
+    availableGroups[0];
   function select(key: string) {
     if (!draft) return;
     const next = {
@@ -73,32 +120,44 @@ export default function Load() {
     const child = track.current?.children[index] as HTMLElement | undefined;
     if (child)
       track.current?.scrollTo({
-        left: child.offsetLeft - track.current.offsetLeft,
-        behavior: "smooth",
+        left:
+          child.offsetLeft -
+          (track.current.children[0] as HTMLElement).offsetLeft,
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "instant"
+          : "smooth",
       });
   }
   return (
     <BookingShell
-      title="How much waste do you have?"
-      desc="Pick the closest size. We’ll take care of the lifting and loading."
+      title={
+        specialist
+          ? `How much ${serviceTitle.toLowerCase()} do you have?`
+          : "How much waste do you have?"
+      }
+      desc={
+        specialist
+          ? "Choose a quarter, half or full load. Volume and weight limits both apply."
+          : "Pick the closest size. We’ll take care of the lifting and loading."
+      }
       step={0}
     >
       <div className="load-layout">
         <div className="load-main">
           <div className="load-categories">
-            {groups.map((g) => (
+            {availableGroups.map((g) => (
               <button
                 type="button"
                 key={g.key}
-                aria-pressed={group === g.key}
+                aria-pressed={currentGroup.key === g.key}
                 onClick={() => {
-                  setGroup(g.key);
-                  setVisible(0);
-                  track.current?.scrollTo({ left: 0 });
+                  scrollTo(
+                    loads.findIndex((load) => g.keys.includes(load.key)),
+                  );
                 }}
               >
                 <strong>{g.title}</strong>
-                <span>{g.description}</span>
+                <span className="load-category-details">{g.description}</span>
               </button>
             ))}
             <Link href="/book/photo-quote">
@@ -122,20 +181,52 @@ export default function Load() {
             </div>
           </div>
           <div
-            className="load-track"
+            className="load-track load-track-synced"
             ref={track}
-            onScroll={() => {
-              const node = track.current;
-              if (node && node.children[0]) {
-                const card = node.children[0] as HTMLElement;
-                setVisible(
-                  Math.round(node.scrollLeft / (card.offsetWidth + 20)),
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="Collection load sizes"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+                event.preventDefault();
+                scrollTo(
+                  Math.max(
+                    0,
+                    Math.min(
+                      loads.length - 1,
+                      visible + (event.key === "ArrowRight" ? 1 : -1),
+                    ),
+                  ),
                 );
               }
             }}
+            onScroll={() => {
+              const node = track.current;
+              if (!node) return;
+              const cards = Array.from(node.children) as HTMLElement[];
+              const origin = cards[0]?.offsetLeft ?? 0;
+              const nearest = cards.reduce(
+                (best, card, index) =>
+                  Math.abs(card.offsetLeft - origin - node.scrollLeft) <
+                  Math.abs(
+                    cards[best].offsetLeft - origin - node.scrollLeft,
+                  )
+                    ? index
+                    : best,
+                0,
+              );
+              setVisible(nearest);
+            }}
           >
-            {loads.map((load) => (
-              <article key={load.key} className="load-card">
+            {loads.map((load, index) => (
+              <article
+                key={load.key}
+                className="load-card"
+                data-load-key={load.key}
+                aria-current={visible === index ? "true" : undefined}
+              >
                 <div className="load-card-title">
                   <span className="eyebrow">{load.title}</span>
                   <h2>
@@ -148,20 +239,35 @@ export default function Load() {
                 <div className="load-diagram">
                   <div>
                     <span>
-                      <strong>Light load</strong>
+                      <strong>{specialist ? "By volume" : "Light load"}</strong>
                       <small>
-                        Bags, boxes
-                        <br />& everyday clutter
+                        {specialist ? (
+                          serviceTitle
+                        ) : (
+                          <>
+                            Bags, boxes
+                            <br />& everyday clutter
+                          </>
+                        )}
                       </small>
                     </span>
                     <LoadIllustration fraction={load.volume / 16} />
                   </div>
                   <div>
                     <span>
-                      <strong>Heavy load</strong>
+                      <strong>{specialist ? "By weight" : "Heavy load"}</strong>
                       <small>
-                        Rubble, soil
-                        <br />& dense materials
+                        {service === "garden-waste" ? (
+                          <>
+                            Branches, cuttings
+                            <br />& green waste
+                          </>
+                        ) : (
+                          <>
+                            Rubble, soil
+                            <br />& dense materials
+                          </>
+                        )}
                       </small>
                     </span>
                     <LoadIllustration fraction={load.weight / 1400} heavy />
@@ -178,11 +284,23 @@ export default function Load() {
                   </div>
                 </div>
                 <div className="load-tags">
-                  {(load.volume <= 4
-                    ? ["Bin bags", "Small furniture", "Garden cuttings"]
-                    : load.volume <= 7
-                      ? ["Room clear-outs", "Mixed furniture", "Bagged rubbish"]
-                      : ["Bigger clear-outs", "Bulky furniture", "Mixed waste"]
+                  {(specialist
+                    ? service === "construction-waste"
+                      ? ["Building debris", "Timber", "Renovation waste"]
+                      : ["Garden cuttings", "Branches", "Green waste"]
+                    : load.volume <= 4
+                      ? ["Bin bags", "Small furniture", "Garden cuttings"]
+                      : load.volume <= 7
+                        ? [
+                            "Room clear-outs",
+                            "Mixed furniture",
+                            "Bagged rubbish",
+                          ]
+                        : [
+                            "Bigger clear-outs",
+                            "Bulky furniture",
+                            "Mixed waste",
+                          ]
                   ).map((tag) => (
                     <span key={tag}>{tag}</span>
                   ))}
@@ -203,7 +321,7 @@ export default function Load() {
                   disabled={!draft}
                   onClick={() => select(load.key)}
                 >
-                  Select {load.title.toLowerCase()}
+                  Select {load.title.split(" — ").at(-1)?.toLowerCase()}
                   <ArrowRight size={19} />
                 </button>
               </article>

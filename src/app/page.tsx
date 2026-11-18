@@ -3,7 +3,13 @@ import Image from "next/image";
 import type { CSSProperties } from "react";
 import { HERO_IMAGE, STEP_IMAGES } from "@/lib/images";
 import { HeroBooking } from "@/components/hero-booking";
-import { SERVICES, DEFAULT_FAQS, itemBookingHref } from "@/lib/constants";
+import {
+  SERVICES,
+  DEFAULT_FAQS,
+  itemBookingHref,
+  isSpecialistLoadService,
+  loadBookingHref,
+} from "@/lib/constants";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -32,11 +38,15 @@ export default function Home() {
               <span className="status-dot" /> A FRESH START FOR YOUR SPACE
             </span> */}
             <h1>
-              Rubbish removal for your
-              <br />
-              <span>home or business.</span>
+              <span className="hero-heading-lead">Clear space.</span>{" "}
+              <span className="hero-heading-line">We’ll take</span>{" "}
+              <span className="hero-heading-line">care of the</span>{" "}
+              <span className="hero-heading-line">waste.</span>
             </h1>
-            <p>Simply book, and we&apos;ll collect.</p>
+            <p>
+              Reliable rubbish removal for homes and businesses across London
+              and surrounding areas.
+            </p>
             <div className="hero-benefits">
               <span>
                 <CalendarDays size={17} />
@@ -96,9 +106,7 @@ export default function Home() {
           <div className="section-top">
             <div>
               {/* <span className="eyebrow">A PLACE FOR EVERYTHING</span> */}
-              <h2 className="section-title">
-                What can we take off your hands?
-              </h2>
+              <h2 className="section-title">What we collect</h2>
               <p className="section-description">
                 One bulky item or a whole lot of waste, we&apos;ll clear it and
                 dispose it properly
@@ -115,15 +123,10 @@ export default function Home() {
                 data-service={service.slug}
                 key={service.slug}
                 href={
-                  [
-                    "office",
-                    "house",
-                    "construction-waste",
-                    "garden-waste",
-                  ].includes(service.slug)
+                  ["office", "house"].includes(service.slug)
                     ? "/book/photo-quote"
-                    : i === 0
-                      ? "/book/load"
+                    : i === 0 || isSpecialistLoadService(service.slug)
+                      ? loadBookingHref(service.slug)
                       : itemBookingHref(service.slug)
                 }
               >
@@ -141,9 +144,7 @@ export default function Home() {
                 <span className="service-card-cta">
                   {["office", "house"].includes(service.slug)
                     ? "Get a quote"
-                    : i >= 4
-                      ? "Enquire now"
-                      : "Book a collection"}
+                    : "Book a collection"}
                   <ArrowRight size={17} />
                 </span>
               </Link>
@@ -423,7 +424,7 @@ export default function Home() {
           <div>
             {/* <span className="eyebrow">LESS LEFT BEHIND</span> */}
             <h2 className="section-title">
-              How we clear and 
+              How we clear and
               <br />
               dispose your waste.
             </h2>

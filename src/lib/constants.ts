@@ -71,6 +71,16 @@ export function itemBookingHref(serviceSlug: string) {
     : "/book/items";
 }
 
+export function isSpecialistLoadService(service: string | null | undefined) {
+  return service === "construction-waste" || service === "garden-waste";
+}
+
+export function loadBookingHref(service: string) {
+  return isSpecialistLoadService(service)
+    ? `/book/load?service=${service}`
+    : "/book/load";
+}
+
 export const LOADS = [
   {
     key: "mini",
@@ -118,6 +128,36 @@ export const LOADS = [
     base: 31900,
   },
 ];
+// Specialist loads reuse the existing small/medium/XL guide tariffs and weight
+// limits. Their volume is a quarter, half or all of the 16-yard full load.
+export const SPECIALIST_LOADS = ["construction", "garden"].flatMap(
+  (wasteType) =>
+    [
+      { size: "quarter", title: "Quarter load", volume: 4, tariff: LOADS[1] },
+      { size: "half", title: "Half load", volume: 8, tariff: LOADS[2] },
+      { size: "full", title: "Full load", volume: 16, tariff: LOADS[4] },
+    ].map(({ size, title, volume, tariff }) => ({
+      ...tariff,
+      key: `${wasteType}-${size}`,
+      title: `${wasteType === "construction" ? "Construction" : "Garden"} waste — ${title.toLowerCase()}`,
+      sizeTitle: title,
+      volume,
+      wasteType,
+      service: `${wasteType}-waste`,
+    })),
+);
+
+export function getLoad(key: string | undefined) {
+  return [
+    ...LOADS.map((load) => ({
+      ...load,
+      wasteType: "mixed",
+      service: "general-waste",
+    })),
+    ...SPECIALIST_LOADS,
+  ].find((load) => load.key === key);
+}
+
 export const ITEMS = [
   {
     key: "sofa-2",

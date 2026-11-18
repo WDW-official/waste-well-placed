@@ -6,7 +6,7 @@ import { connectDB } from "@/lib/db";
 import { Booking, Hold, Slot, Audit } from "@/lib/models";
 import { attachPhotos } from "@/lib/operations/assets";
 import { notifyStaff } from "@/lib/operations/events";
-import { LOADS } from "@/lib/constants";
+import { getLoad } from "@/lib/constants";
 import { requireCondition } from "@/lib/operations/security";
 import { newRef } from "@/lib/utils";
 import { ok, errorResponse, fail, ensureSameOrigin } from "@/lib/http";
@@ -69,6 +69,7 @@ export async function POST(req: Request) {
     });
     if (!slot) return fail("Slot is no longer available", 409);
     const estimate = priceEstimate(data, zone.surchargeMinor);
+    const load = data.kind === "load" ? getLoad(data.loadKey) : undefined;
     const db = await connectDB();
     const booked = await db.connection.transaction(async (session) => {
       const claimed = await Hold.updateOne(
@@ -88,14 +89,12 @@ export async function POST(req: Request) {
             userId: user.id,
             kind: data.kind,
             source: data.kind,
-            expectedWeightKg:
-              data.kind === "load"
-                ? LOADS.find((load) => load.key === data.loadKey)?.weight
-                : undefined,
-            expectedVolumeM3:
-              data.kind === "load"
-                ? LOADS.find((load) => load.key === data.loadKey)?.volume
-                : undefined,
+            wasteType: load?.wasteType ?? "mixed",
+            expectedWeightKg: data.kind === "load" ? load?.weight : undefined,
+            // Customer load sizes are cubic yards; dispatch capacity is m³.
+            expectedVolumeM3: load
+              ? Number((load.volume * 0.764554858).toFixed(3))
+              : undefined,
             items: estimate.lines.map((x, i) => ({
               key: data.kind === "items" ? data.items[i]?.key : data.loadKey,
               title: x.title,

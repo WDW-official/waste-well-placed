@@ -63,6 +63,7 @@ import { POST as decideQuote } from "@/app/api/quotes/[id]/route";
 import { GET as privateAsset } from "@/app/api/assets/[id]/route";
 import { PATCH as reviewDriver } from "@/app/api/admin/drivers/[id]/route";
 import { POST as settle } from "@/app/api/operations/payouts/[id]/route";
+import { POST as createBooking } from "@/app/api/bookings/route";
 let replica: MongoMemoryReplSet;
 let driverId: string;
 let bookingId: string;
@@ -626,4 +627,60 @@ describe("Stripe event idempotency", () => {
     expect((await Booking.findById(bookingId))?.refundsMinor).toBe(12000);
     expect(await Audit.countDocuments({ action: "payment.refunded" })).toBe(1);
   });
+});
+
+describe("specialist load checkout", () => {
+  it.each([
+    ["construction-half", "construction", 15900, 350, 6.116],
+    ["garden-full", "garden", 31900, 900, 12.233],
+  ])(
+    "preserves %s classification and server pricing",
+    async (loadKey, wasteType, subtotal, weight, volume) => {
+      const customer = await User.findOne({ role: "customer" });
+      actor.id = String(customer!._id);
+      actor.role = "customer";
+      const zone = await Zone.create({
+        name: "Specialist test zone",
+        prefixes: ["SW1A"],
+        active: true,
+      });
+      const slot = await Slot.create({
+        zoneId: zone._id,
+        start: new Date(Date.now() + 3600_000),
+        capacity: 3,
+        reservedCount: 1,
+      });
+      const hold = await Hold.create({
+        slotId: slot._id,
+        userId: customer!._id,
+        expiresAt: new Date(Date.now() + 900_000),
+      });
+      const response = await createBooking(
+        request({
+          kind: "load",
+          postcode: "SW1A 1AA",
+          loadKey,
+          address: {
+            line1: "10 Test Street",
+            city: "London",
+            postcode: "SW1A 1AA",
+          },
+          slotId: String(slot._id),
+          holdId: String(hold._id),
+          idempotencyKey: crypto.randomUUID(),
+        }),
+      );
+      expect(response.status).toBe(201);
+      const result = await response.json();
+      const saved = await Booking.findById(result.bookingId);
+      expect(saved).toMatchObject({
+        loadKey,
+        wasteType,
+        expectedWeightKg: weight,
+        expectedVolumeM3: volume,
+      });
+      expect(saved?.price?.subtotalMinor).toBe(subtotal);
+      expect((await Hold.findById(hold._id))?.status).toBe("consumed");
+    },
+  );
 });

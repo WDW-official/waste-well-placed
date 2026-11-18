@@ -9,8 +9,13 @@ import {
   WASTE_MENU_IMAGE,
   WASTE_SUBMENU_IMAGE,
   CONSTRUCTION_SUBMENU_IMAGE,
+  DRIVER_MENU_IMAGE,
 } from "@/lib/images";
-import { SERVICES } from "@/lib/constants";
+import {
+  SERVICES,
+  isSpecialistLoadService,
+  loadBookingHref,
+} from "@/lib/constants";
 import { useBasket } from "./basket";
 
 export function Header() {
@@ -85,7 +90,9 @@ export function Header() {
                     href={
                       ["office", "house"].includes(s.slug)
                         ? "/book/photo-quote"
-                        : `/services/${s.slug}`
+                        : isSpecialistLoadService(s.slug)
+                          ? loadBookingHref(s.slug)
+                          : `/services/${s.slug}`
                     }
                   >
                     {s.title}
@@ -97,6 +104,7 @@ export function Header() {
             <Link href="/how-it-works">How it works</Link>
             <Link href="/faq">FAQs</Link>
             <Link href="/business">For businesses</Link>
+            <Link href="/work-with-us">Work with us</Link>
           </nav>
           <div className="header-actions">
             <Link href="/login" className="btn btn-outline login-link">
@@ -204,12 +212,7 @@ export function Header() {
               onToggle={toggleCategory}
             >
               <summary>
-                <Image
-                  src={WASTE_MENU_IMAGE}
-                  alt=""
-                  width={85}
-                  height={65}
-                />
+                <Image src={WASTE_MENU_IMAGE} alt="" width={85} height={65} />
                 <div>
                   <strong>Construction &amp; garden waste</strong>
                   <span>Clear your building site or outdoor space.</span>
@@ -220,7 +223,11 @@ export function Header() {
                 {SERVICES.filter((s) =>
                   ["construction-waste", "garden-waste"].includes(s.slug),
                 ).map((s) => (
-                  <Link href="/book/photo-quote" key={s.slug} onClick={close}>
+                  <Link
+                    href={loadBookingHref(s.slug)}
+                    key={s.slug}
+                    onClick={close}
+                  >
                     <Image
                       src={
                         s.slug === "construction-waste"
@@ -236,6 +243,20 @@ export function Header() {
                 ))}
               </div>
             </details>
+            <Link
+              className="drawer-service"
+              href="/work-with-us"
+              onClick={close}
+            >
+              <Image src={DRIVER_MENU_IMAGE} alt="" width={85} height={65} />
+              <div>
+                <strong>Work with us</strong>
+                <span>
+                  Drive with Waste Well Placed. Explore collection work.
+                </span>
+              </div>
+              <ArrowRight size={18} />
+            </Link>
             {[
               ["How it works", "/how-it-works"],
               ["FAQs", "/faq"],

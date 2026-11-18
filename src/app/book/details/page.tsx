@@ -11,7 +11,7 @@ import {
   request,
   type BookingDraft,
 } from "@/lib/booking-client";
-import { LOADS } from "@/lib/constants";
+import { getLoad, loadBookingHref } from "@/lib/constants";
 import { phoneHref, whatsappHref } from "@/lib/contact";
 import {
   Camera,
@@ -216,7 +216,7 @@ export default function Details() {
   }
 
   const c = draft?.contact || emptyContact;
-  const selected = LOADS.find((load) => load.key === draft?.loadKey);
+  const selected = getLoad(draft?.loadKey);
   const contactValid =
     c.name.trim().length >= 2 &&
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c.email) &&
@@ -628,7 +628,13 @@ export default function Details() {
                   {draft.postcode.toUpperCase()}
                 </div>
               )}
-              <Link href={draft.kind === "load" ? "/book/load" : "/book/items"}>
+              <Link
+                href={
+                  draft.kind === "load"
+                    ? loadBookingHref(selected?.service ?? "general-waste")
+                    : "/book/items"
+                }
+              >
                 Change your selection
               </Link>
             </div>

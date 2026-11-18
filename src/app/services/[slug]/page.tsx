@@ -1,4 +1,9 @@
-import { SERVICES, itemBookingHref } from "@/lib/constants";
+import {
+  SERVICES,
+  itemBookingHref,
+  isSpecialistLoadService,
+  loadBookingHref,
+} from "@/lib/constants";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,12 +27,7 @@ export default async function ServicePage({
   const { slug } = await params;
   const service = SERVICES.find((s) => s.slug === slug);
   if (!service) notFound();
-  const photo = [
-    "house",
-    "office",
-    "construction-waste",
-    "garden-waste",
-  ].includes(slug);
+  const photo = ["house", "office"].includes(slug);
   return (
     <>
       <PageTitle
@@ -58,8 +58,8 @@ export default async function ServicePage({
               href={
                 photo
                   ? "/book/photo-quote"
-                  : slug === "general-waste"
-                    ? "/book/load"
+                  : slug === "general-waste" || isSpecialistLoadService(slug)
+                    ? loadBookingHref(slug)
                     : itemBookingHref(slug)
               }
             >

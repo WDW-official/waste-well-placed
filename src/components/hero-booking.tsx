@@ -12,7 +12,7 @@ import {
   Check,
   MessageCircle,
   ShieldCheck,
-  Trash2,
+  ShoppingBag,
   Armchair,
 } from "lucide-react";
 import { Select } from "@/components/select";
@@ -21,22 +21,22 @@ import { toast } from "sonner";
 const tabs = [
   {
     key: "load",
-    name: "Pile of junk",
-    Icon: Trash2,
+    name: "Mixed waste",
+    Icon: ShoppingBag,
     description:
-      "Bags, boxes and mixed rubbish. Choose the load size that fits.",
-    action: "See load sizes",
+      "Tell us what needs to go, where you’re based and when you’d like it collected.",
+    action: "Explore collection options",
   },
   {
     key: "items",
-    name: "Single items",
+    name: "Bulky items",
     Icon: Armchair,
     description: "A sofa, a fridge, or a few things. Tell us what needs to go.",
-    action: "Choose your items",
+    action: "Explore collection options",
   },
   {
     key: "photo-quote",
-    name: "Photo quote",
+    name: "Photo estimate",
     Icon: Camera,
     description: "Not sure what you’ve got? Send us photos and we’ll quote.",
     action: "Get a photo quote",
@@ -81,6 +81,7 @@ export function HeroBooking() {
 
   return (
     <div className="booking-widget">
+      <h2 className="booking-widget-title">Book a collection</h2>
       <div className="booking-tabs" aria-label="Choose collection type">
         {tabs.map(({ key, name, Icon }) => (
           <button
@@ -94,6 +95,11 @@ export function HeroBooking() {
               <Icon size={30} strokeWidth={1.6} aria-hidden="true" />
             </span>
             <span>{name}</span>
+            {tab === key && (
+              <span className="booking-tab-check" aria-hidden="true">
+                <Check size={12} strokeWidth={3} />
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -141,14 +147,14 @@ export function HeroBooking() {
                 disabled={busy}
                 value={postcode}
                 onChange={(e) => setPostcode(e.target.value)}
-                placeholder="Enter your UK postcode"
+                placeholder="Collection postcode"
                 maxLength={10}
               />
             </div>
             <div className="booking-date">
               <CalendarDays aria-hidden="true" />
               <div>
-                <label htmlFor="hero-date">When do you need it?</label>
+                <label htmlFor="hero-date">Preferred collection day</label>
                 <Select
                   id="hero-date"
                   variant="plain"
@@ -191,8 +197,10 @@ export function HeroBooking() {
           </p>
         ) : (
           <p className="booking-reassurance">
-            <Check size={15} /> No payment until the final step <span>·</span>{" "}
-            Coverage checked before booking
+            <Check size={15} aria-hidden="true" />
+            <span>No payment until checkout</span>
+            <span aria-hidden="true">·</span>
+            <span>Coverage checked before booking</span>
           </p>
         )}
       </form>

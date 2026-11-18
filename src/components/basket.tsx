@@ -8,6 +8,7 @@ import {
   X,
   Phone,
   ArrowUpRight,
+  ChevronRight,
 } from "lucide-react";
 import { loadDraft } from "@/lib/booking-client";
 import { phoneHref, whatsappHref } from "@/lib/contact";
@@ -94,7 +95,8 @@ export function FloatingActions() {
         <div className="floating-checkout">
           <Link className="btn btn-primary" href={href}>
             <ShoppingCart size={21} />
-            Continue booking<span className="basket-count">{count}</span>
+            Review your booking<span className="basket-count">{count}</span>
+            <ChevronRight size={22} aria-hidden="true" />
           </Link>
         </div>
       )}
