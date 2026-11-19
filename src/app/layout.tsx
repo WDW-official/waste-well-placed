@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
@@ -26,7 +27,9 @@ export default function RootLayout({
   return (
     <html lang="en-GB">
       <body>
-        <ScrollToTop />
+        <Suspense fallback={null}>
+          <ScrollToTop />
+        </Suspense>
         <Header />
         <main id="main-content">{children}</main>
         <Footer />
