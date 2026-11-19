@@ -1,6 +1,8 @@
 "use client";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
+import { SPECIALIST_LOAD_IMAGES } from "@/lib/images";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BookingShell } from "@/components/booking-shell";
 import { LoadIllustration } from "@/components/load-illustration";
@@ -210,9 +212,7 @@ function LoadSelector() {
               const nearest = cards.reduce(
                 (best, card, index) =>
                   Math.abs(card.offsetLeft - origin - node.scrollLeft) <
-                  Math.abs(
-                    cards[best].offsetLeft - origin - node.scrollLeft,
-                  )
+                  Math.abs(cards[best].offsetLeft - origin - node.scrollLeft)
                     ? index
                     : best,
                 0,
@@ -236,43 +236,59 @@ function LoadSelector() {
                     Up to {load.bags} bags · {load.minutes} minutes loading
                   </p>
                 </div>
-                <div className="load-diagram">
-                  <div>
-                    <span>
-                      <strong>{specialist ? "By volume" : "Light load"}</strong>
-                      <small>
-                        {specialist ? (
-                          serviceTitle
-                        ) : (
-                          <>
-                            Bags, boxes
-                            <br />& everyday clutter
-                          </>
-                        )}
-                      </small>
-                    </span>
-                    <LoadIllustration fraction={load.volume / 16} />
+                {specialist ? (
+                  <div className="specialist-load-image">
+                    <Image
+                      src={SPECIALIST_LOAD_IMAGES[load.key]}
+                      alt={load.title}
+                      width={1200}
+                      height={900}
+                      sizes="(max-width: 767px) 90vw, (max-width: 950px) 85vw, 65vw"
+                    />
                   </div>
-                  <div>
-                    <span>
-                      <strong>{specialist ? "By weight" : "Heavy load"}</strong>
-                      <small>
-                        {service === "garden-waste" ? (
-                          <>
-                            Branches, cuttings
-                            <br />& green waste
-                          </>
-                        ) : (
-                          <>
-                            Rubble, soil
-                            <br />& dense materials
-                          </>
-                        )}
-                      </small>
-                    </span>
-                    <LoadIllustration fraction={load.weight / 1400} heavy />
+                ) : (
+                  <div className="load-diagram">
+                    <div>
+                      <span>
+                        <strong>
+                          {specialist ? "By volume" : "Light load"}
+                        </strong>
+                        <small>
+                          {specialist ? (
+                            serviceTitle
+                          ) : (
+                            <>
+                              Bags, boxes
+                              <br />& everyday clutter
+                            </>
+                          )}
+                        </small>
+                      </span>
+                      <LoadIllustration fraction={load.volume / 16} />
+                    </div>
+                    <div>
+                      <span>
+                        <strong>
+                          {specialist ? "By weight" : "Heavy load"}
+                        </strong>
+                        <small>
+                          {service === "garden-waste" ? (
+                            <>
+                              Branches, cuttings
+                              <br />& green waste
+                            </>
+                          ) : (
+                            <>
+                              Rubble, soil
+                              <br />& dense materials
+                            </>
+                          )}
+                        </small>
+                      </span>
+                      <LoadIllustration fraction={load.weight / 1400} heavy />
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className="load-examples">
                   <div>
                     <span>VOLUME</span>

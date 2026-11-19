@@ -530,6 +530,7 @@ svg {
 }
 .drawer-service strong,
 .drawer-category strong {
+  color: #78b82a;
   font-size: 17px;
   font-weight: 600;
   display: block;
@@ -569,10 +570,12 @@ svg {
   margin-bottom: 9px;
 }
 .drawer-subservices a {
+  color: #78b82a;
   font-size: 14px;
   font-weight: 600;
 }
 .drawer-link {
+  color: #78b82a;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1000,19 +1003,25 @@ svg {
   gap: 15px;
 }
 .home-service-card {
+  border: 1px solid #d5e2d5;
   border-radius: 19px;
   background: var(--pale);
+  box-shadow: 0 3px 10px rgb(0 63 53 / 7%);
   padding: 15px 16px 20px;
   display: flex;
   flex-direction: column;
   min-width: 0;
   transition:
     transform 0.2s,
-    background 0.2s;
+    background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 .home-service-card:hover {
   transform: translateY(-5px);
   background: #eff2e6;
+  border-color: #a7c5ac;
+  box-shadow: 0 7px 18px rgb(0 63 53 / 11%);
 }
 .service-image {
   height: 120px;
@@ -1828,6 +1837,18 @@ body:has(.booking-page) > .footer {
   border-radius: 15px;
   padding: 9px 10px;
   margin: 0 -4px 20px;
+}
+.specialist-load-image {
+  overflow: hidden;
+  margin: 0 0 20px;
+  border-radius: 15px;
+  background: #fff;
+}
+.specialist-load-image img {
+  display: block;
+  width: 100%;
+  height: clamp(200px, 30vw, 380px);
+  object-fit: contain;
 }
 .load-diagram > div {
   display: flex;

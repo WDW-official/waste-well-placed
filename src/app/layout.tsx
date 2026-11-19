@@ -3,6 +3,7 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { SiteMotion } from "@/components/site-motion";
+import { ScrollToTop } from "@/components/scroll-to-top";
 import { FloatingActions } from "@/components/basket";
 import { Toaster } from "sonner";
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en-GB">
       <body>
+        <ScrollToTop />
         <Header />
         <main id="main-content">{children}</main>
         <Footer />

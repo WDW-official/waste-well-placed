@@ -10,6 +10,15 @@ export const WASTE_MENU_IMAGE = `${cloudinary}/v1794780819/Main_Menu_Constructio
 export const WASTE_SUBMENU_IMAGE = `${cloudinary}/v1794819530/Garden_Waste_01_Loose_Cuttings_1x1.png`;
 export const CONSTRUCTION_SUBMENU_IMAGE = `${cloudinary}/v1794823169/Construction_Waste_01_Loose_Rubble_1x1_1.png`;
 
+export const SPECIALIST_LOAD_IMAGES: Record<string, string> = {
+  "construction-quarter": `${cloudinary}/v1794962677/Quarter_Load.png`,
+  "construction-half": `${cloudinary}/v1794962675/Half_Load.png`,
+  "construction-full": `${cloudinary}/v1794962676/Full_Load.png`,
+  "garden-quarter": `${cloudinary}/v1795106873/Quarter_Load_garden.png`,
+  "garden-half": `${cloudinary}/v1795106871/Half_Load_garden.png`,
+  "garden-full": `${cloudinary}/v1795106887/Full_Load_garden.png`,
+};
+
 export const SERVICE_IMAGES: Record<string, string> = {
   "general-waste": `${cloudinary}/v1794780839/Section_02_Rubbish_Clearance.png`,
   furniture: `${cloudinary}/v1794780829/Section_02_Furniture_Removal.png`,
