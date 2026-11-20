@@ -8,12 +8,12 @@ export default async function Apply() {
   return (
     <PlatformShell
       title="Apply to drive with us"
-      subtitle="Save your progress and return when your documents are ready. Every application is reviewed by a person."
+      subtitle="Apply first, without a password. Every application is reviewed by our team; approved drivers receive an email link to set their password."
     >
       {!user ? (
         <DriverAccess register />
       ) : user.role === "driver" ? (
-        <DriverApplicationForm />
+        <DriverApplicationForm passwordPending={user.driverPasswordPending} />
       ) : (
         <div className="platform-card">
           <p>

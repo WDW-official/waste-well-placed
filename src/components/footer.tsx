@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { SERVICES } from "@/lib/constants";
-import { Mail, Phone } from "lucide-react";
+import { PublicCompany } from "./public-company";
 export function Footer() {
   return (
     <footer className="footer">
@@ -25,10 +25,7 @@ export function Footer() {
             simpler booking experience for homes and businesses in London and
             surrounding areas.
           </p>
-          <p className="text-sm text-green-100">
-            UK waste carrier registration and company credentials will appear
-            here once verified.
-          </p>
+          <PublicCompany />
         </div>
         <div>
           <h3 className="font-bold mb-3">Services</h3>
@@ -72,14 +69,6 @@ export function Footer() {
               {n}
             </Link>
           ))}
-          <p className="flex items-center gap-2 text-sm mt-4">
-            <Mail size={14} />
-            {process.env.NEXT_PUBLIC_COMPANY_EMAIL || "Contact support"}
-          </p>
-          <p className="flex items-center gap-2 text-sm">
-            <Phone size={14} />
-            {process.env.NEXT_PUBLIC_COMPANY_PHONE || "Phone pending"}
-          </p>
         </div>
       </div>
       <div className="container border-t border-green-700 mt-10 pt-5 text-sm text-green-100 flex justify-between flex-wrap gap-3">

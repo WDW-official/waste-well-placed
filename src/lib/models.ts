@@ -18,6 +18,13 @@ const UserSchema = new Schema(
     },
     phone: String,
     passwordHash: { type: String, required: true },
+    driverPasswordPending: { type: Boolean, default: false },
+    driverAccessTokenHash: { type: String, select: false },
+    driverAccessExpiresAt: { type: Date, select: false },
+    driverAccessPurpose: { type: String, select: false },
+    resetTokenHash: { type: String, select: false },
+    resetTokenExpiresAt: { type: Date, select: false },
+    sessionVersion: { type: Number, default: 0 },
     role: {
       type: String,
       enum: [
@@ -65,6 +72,7 @@ const CatalogSchema = new Schema(
     key: { type: String, unique: true },
     title: String,
     category: String,
+    image: String,
     priceMinor: Number,
     active: { type: Boolean, default: true },
   },
@@ -106,7 +114,8 @@ const HoldSchema = new Schema(
   },
   { timestamps: true },
 );
-HoldSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+// Holds must be reconciled with slot capacity before removal; never TTL-delete.
+HoldSchema.index({ expiresAt: 1 });
 const QuoteSchema = new Schema(
   {
     reference: { type: String, unique: true },
@@ -235,6 +244,10 @@ const BookingSchema = new Schema(
     },
     notes: String,
     idempotencyKey: String,
+    requestHash: String,
+    checkoutExpiresAt: Date,
+    slotReleasedAt: Date,
+    cancelledAt: Date,
   },
   { timestamps: true },
 );

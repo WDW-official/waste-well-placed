@@ -1,8 +1,14 @@
-import { ok } from "@/lib/http";
-import { ITEMS } from "@/lib/constants";
+import { ok, errorResponse } from "@/lib/http";
+import { itemCatalog } from "@/lib/catalog";
 export async function GET(req: Request) {
-  const search = new URL(req.url).searchParams.get("q")?.toLowerCase() || "";
-  return ok({
-    items: ITEMS.filter((i) => i.title.toLowerCase().includes(search)),
-  });
+  try {
+    const search = new URL(req.url).searchParams.get("q")?.toLowerCase() || "";
+    return ok({
+      items: (await itemCatalog()).filter((item) =>
+        item.title.toLowerCase().includes(search),
+      ),
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
 }

@@ -14,7 +14,10 @@ export const metadata = {
 export default function WorkWithUs() {
   return (
     <>
-      <section className="driver-recruitment-hero" aria-labelledby="driver-hero-title">
+      <section
+        className="driver-recruitment-hero"
+        aria-labelledby="driver-hero-title"
+      >
         <Image
           className="driver-recruitment-background"
           src={DRIVER_HERO_IMAGE}
@@ -26,7 +29,8 @@ export default function WorkWithUs() {
         <div className="container driver-recruitment-content">
           <span className="driver-recruitment-eyebrow">WORK WITH US</span>
           <h1 id="driver-hero-title">
-            Drive with<br />
+            Drive with
+            <br />
             <span>Waste Well Placed.</span>
           </h1>
           <p>

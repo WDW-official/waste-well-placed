@@ -1,3 +1,6 @@
+import { ReviewForm } from "@/components/review-form";
+import { Invoice } from "@/lib/workflow-models";
+import { BookingChangeForm } from "@/components/booking-change-form";
 import { CollectionTimeline } from "@/components/collection-timeline";
 import { getSession } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
@@ -18,6 +21,9 @@ export default async function Detail({
   await connectDB();
   const b = await Booking.findOne({ _id: id, userId: user?.id }).lean();
   if (!b) notFound();
+  const invoice = await Invoice.findOne({ bookingId: b._id })
+    .select("_id number")
+    .lean();
   return (
     <DashLayout
       type="My account"
@@ -45,6 +51,24 @@ export default async function Detail({
           <p className="mt-3">
             <strong>Payment:</strong> {b.paymentStatus}
           </p>
+          {["paid", "refunded"].includes(b.paymentStatus) && (
+            <Link
+              className="btn btn-outline mt-5"
+              href={`/api/bookings/${id}/receipt`}
+              target="_blank"
+            >
+              View payment receipt
+            </Link>
+          )}
+          {invoice && (
+            <Link
+              className="btn btn-outline mt-5"
+              href={`/api/invoices/${invoice._id}`}
+              target="_blank"
+            >
+              View invoice {invoice.number}
+            </Link>
+          )}
           {["verified", "closed"].includes(b.status) && (
             <Link
               className="btn btn-primary mt-6"
@@ -58,6 +82,10 @@ export default async function Detail({
           <CollectionTimeline id={id} />
         </div>
       </div>
+      <BookingChangeForm id={id} status={b.status} />
+      {["verified", "closed"].includes(b.status) && (
+        <ReviewForm bookingId={id} />
+      )}
     </DashLayout>
   );
 }

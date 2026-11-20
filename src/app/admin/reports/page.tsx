@@ -1,9 +1,11 @@
+import { requireUser } from "@/lib/operations/security";
 import { DashLayout } from "@/components/dash-layout";
 import { adminLinks } from "@/lib/admin-links";
 import { connectDB } from "@/lib/db";
 import { Booking } from "@/lib/models";
 import { gbp } from "@/lib/utils";
 export default async function Reports() {
+  await requireUser("finance");
   await connectDB();
   const result = await Booking.aggregate([
     { $match: { paymentStatus: "paid" } },

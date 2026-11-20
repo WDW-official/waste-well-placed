@@ -7,6 +7,7 @@ export const adminLinks = [
   { name: "Slots", href: "/admin/slots" },
   { name: "Areas", href: "/admin/areas" },
   { name: "Customers", href: "/admin/customers" },
+  { name: "Organisations", href: "/admin/organizations" },
   { name: "Drivers", href: "/admin/drivers" },
   { name: "Facilities", href: "/admin/facilities" },
   { name: "Payouts", href: "/admin/payouts" },
@@ -14,5 +15,6 @@ export const adminLinks = [
   { name: "Policy", href: "/admin/operations-settings" },
   { name: "Reports", href: "/admin/reports" },
   { name: "Content", href: "/admin/content" },
+  { name: "Reviews", href: "/admin/reviews" },
   { name: "Settings", href: "/admin/settings" },
 ];

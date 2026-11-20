@@ -1,4 +1,5 @@
 "use client";
+import { BookingManagement } from "./booking-management";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, localDate, moneyInput } from "@/lib/operations/client";
@@ -253,6 +254,9 @@ export function JobCockpit({ id }: { id: string }) {
                 </a>
               )}
             </div>
+            {(data.permissions.dispatch || data.permissions.finance) && (
+              <BookingManagement id={id} />
+            )}
             <h3 className="mt-6">Open issues</h3>
             {!data.issues.length && <p>No issues recorded.</p>}
             {data.issues.map((issue) => (

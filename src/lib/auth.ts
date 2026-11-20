@@ -10,8 +10,18 @@ const secret = () => {
     throw new Error("SESSION_SECRET must contain at least 32 characters");
   return new TextEncoder().encode(s);
 };
-export async function createSession(user: { id: string; role: string }) {
-  const jwt = await new SignJWT({ role: user.role })
+export async function createSession(user: {
+  id: string;
+  role: string;
+  applicationOnly?: boolean;
+}) {
+  await connectDB();
+  const account = await User.findById(user.id).select("sessionVersion").lean();
+  const jwt = await new SignJWT({
+    sessionVersion: account?.sessionVersion ?? 0,
+    role: user.role,
+    ...(user.applicationOnly ? { applicationOnly: true } : {}),
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(user.id)
     .setIssuedAt()
@@ -33,15 +43,22 @@ export async function getSession() {
     if (!payload.sub) return null;
     await connectDB();
     const user = await User.findById(payload.sub)
-      .select("_id name email phone role organizationId")
+      .select(
+        "_id name email phone role organizationId driverPasswordPending sessionVersion",
+      )
       .lean();
-    if (!user) return null;
+    if (!user || (payload.sessionVersion ?? 0) !== (user.sessionVersion ?? 0))
+      return null;
+    // Approval password setup invalidates every pre-approval application session.
+    if (payload.applicationOnly === true && !user.driverPasswordPending)
+      return null;
     return {
       id: String(user._id),
       name: user.name as string,
       email: user.email as string,
       phone: user.phone ?? "",
       role: user.role as string,
+      driverPasswordPending: user.driverPasswordPending === true,
       organizationId: user.organizationId ? String(user.organizationId) : null,
     };
   } catch {

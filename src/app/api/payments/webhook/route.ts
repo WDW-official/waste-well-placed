@@ -1,6 +1,8 @@
+import { expireUnpaidBooking } from "@/lib/slot-holds";
 import { stripeClient } from "@/lib/stripe";
 import { connectDB } from "@/lib/db";
 import { Payment, Booking } from "@/lib/models";
+import { RefundRequest } from "@/lib/workflow-models";
 import { Payout, ProviderEvent } from "@/lib/operations/models";
 import { audit, notify, notifyStaff } from "@/lib/operations/events";
 export async function POST(req: Request) {
@@ -77,7 +79,55 @@ export async function POST(req: Request) {
           },
           { session },
         );
-        if (!changed) return;
+        if (!changed) {
+          const late = await Booking.findOneAndUpdate(
+            {
+              _id: bookingId,
+              paymentStatus: "pending",
+              slotReleasedAt: { $exists: true },
+            },
+            {
+              $set: {
+                paymentStatus: "paid",
+                paidMinor: checkout.amount_total,
+                status: "payment_review",
+              },
+              $inc: { version: 1 },
+              $push: {
+                events: {
+                  status: "payment_review",
+                  at: new Date(),
+                  note: "Payment arrived after the slot was released; staff must arrange collection or refund.",
+                },
+              },
+            },
+            { new: true, session },
+          );
+          if (late) {
+            await notifyStaff(
+              `booking:${bookingId}:late-payment`,
+              "late_payment",
+              late.reference ?? bookingId,
+              "Payment arrived after capacity was released. Review for a new slot or refund.",
+              `/admin/jobs/${bookingId}`,
+              session,
+            );
+            await notify(
+              {
+                key: `booking:${bookingId}:payment-review`,
+                event: "payment_review",
+                reference: late.reference ?? bookingId,
+                recipientId: String(late.userId),
+                subject: "Your payment needs a collection review",
+                message:
+                  "We received your payment after the reservation ended. Our team will contact you to arrange a collection or refund.",
+                href: `/account/bookings/${bookingId}`,
+              },
+              session,
+            );
+          }
+          return;
+        }
         await audit(
           "stripe",
           "payment.verified",
@@ -107,6 +157,11 @@ export async function POST(req: Request) {
         );
       });
     }
+    if (event.type === "checkout.session.expired") {
+      const checkout = event.data.object;
+      const payment = await Payment.findOne({ providerRef: checkout.id });
+      if (payment) await expireUnpaidBooking(String(payment.bookingId));
+    }
     if (event.type === "charge.refunded") {
       const charge = event.data.object;
       const intent =
@@ -121,6 +176,20 @@ export async function POST(req: Request) {
           providerIntentId: intent,
         }).session(session);
         if (!payment) return;
+        const refundedIds =
+          charge.refunds?.data
+            .filter((refund) => refund.status === "succeeded")
+            .map((refund) => refund.id) ?? [];
+        if (refundedIds.length)
+          await RefundRequest.updateMany(
+            {
+              bookingId: payment.bookingId,
+              providerRef: { $in: refundedIds },
+              status: { $in: ["submitted", "sending"] },
+            },
+            { $set: { status: "confirmed" } },
+            { session },
+          );
         const changed = await Booking.findOneAndUpdate(
           {
             _id: payment.bookingId,

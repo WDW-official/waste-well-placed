@@ -64,9 +64,43 @@ function LoadSelector() {
   const specialist = isSpecialistLoadService(service);
   const serviceTitle =
     service === "construction-waste" ? "Construction waste" : "Garden waste";
+  const [prices, setPrices] = useState<
+    Record<string, { base: number; title: string; active: boolean }>
+  >({});
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/catalog/loads")
+      .then((response) => {
+        if (!response.ok) throw new Error("Unable to load prices");
+        return response.json();
+      })
+      .then((data) => {
+        if (!cancelled)
+          setPrices(
+            Object.fromEntries(
+              data.loads.map(
+                (load: {
+                  key: string;
+                  base: number;
+                  title: string;
+                  active: boolean;
+                }) => [load.key, load],
+              ),
+            ),
+          );
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const serviceLoads = useMemo(
-    () => SPECIALIST_LOADS.filter((load) => load.service === service),
-    [service],
+    () =>
+      SPECIALIST_LOADS.filter(
+        (load) =>
+          load.service === service && prices[load.key]?.active !== false,
+      ).map((load) => ({ ...load, ...prices[load.key] })),
+    [service, prices],
   );
   const availableGroups = useMemo(
     () =>
@@ -82,7 +116,15 @@ function LoadSelector() {
   );
   const [draft, setDraft] = useState<BookingDraft | null>(null);
   const [visible, setVisible] = useState(0);
-  const loads = specialist ? serviceLoads : LOADS;
+  const loads = useMemo(
+    () =>
+      specialist
+        ? serviceLoads
+        : LOADS.filter((load) => prices[load.key]?.active !== false).map(
+            (load) => ({ ...load, ...prices[load.key] }),
+          ),
+    [specialist, serviceLoads, prices],
+  );
   const track = useRef<HTMLDivElement>(null);
   const router = useRouter();
   useEffect(() => {
@@ -130,6 +172,15 @@ function LoadSelector() {
           : "smooth",
       });
   }
+  if (!loads.length)
+    return (
+      <BookingShell step={0} title="No load sizes are available">
+        <p>Please contact us for a quote.</p>
+        <Link href="/book/photo-quote" className="btn btn-primary">
+          Request a quote
+        </Link>
+      </BookingShell>
+    );
   return (
     <BookingShell
       title={

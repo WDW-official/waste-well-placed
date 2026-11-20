@@ -14,6 +14,8 @@ import {
 import { ok, fail, errorResponse, ensureSameOrigin } from "@/lib/http";
 import { z } from "zod";
 import mongoose from "mongoose";
+import { Tariff, Review } from "@/lib/workflow-models";
+import { adminRecordSchemas } from "@/lib/admin-records";
 const models: Record<string, Model<unknown>> = {
   bookings: Booking,
   quotes: Quote,
@@ -22,6 +24,8 @@ const models: Record<string, Model<unknown>> = {
   services: Service,
   catalog: Catalog,
   posts: Post,
+  tariffs: Tariff,
+  reviews: Review,
 } as unknown as Record<string, Model<unknown>>;
 const changes = z.object({
   name: z.enum([
@@ -32,6 +36,8 @@ const changes = z.object({
     "services",
     "catalog",
     "posts",
+    "tariffs",
+    "reviews",
   ]),
   id: z.string(),
   patch: z.record(z.unknown()),
@@ -57,6 +63,8 @@ const ALLOWED: { [key: string]: string[] } = {
     "basePriceMinor",
   ],
   catalog: ["title", "category", "priceMinor", "active"],
+  tariffs: ["title", "priceMinor", "active"],
+  reviews: ["approved"],
   posts: ["title", "excerpt", "body", "image", "published"],
 };
 export async function PATCH(req: Request) {
@@ -67,7 +75,15 @@ export async function PATCH(req: Request) {
     const { name, id, patch } = changes.parse(await req.json());
     if (!mongoose.isValidObjectId(id)) return fail("Invalid id");
     if (
-      ["zones", "slots", "services", "catalog", "posts"].includes(name) &&
+      [
+        "zones",
+        "slots",
+        "services",
+        "catalog",
+        "tariffs",
+        "posts",
+        "reviews",
+      ].includes(name) &&
       !["admin", "superadmin"].includes(user.role)
     )
       return fail("Forbidden", 403);
@@ -75,9 +91,46 @@ export async function PATCH(req: Request) {
     if (!fields.length || fields.some((k) => !ALLOWED[name].includes(k)))
       return fail("Invalid update fields", 422);
     await connectDB();
+    const existing = await models[name].findById(id).lean();
+    if (!existing) return fail("Not found", 404);
+    if (name === "slots") {
+      const slot = existing as { reservedCount?: number };
+      if (
+        typeof patch.capacity === "number" &&
+        patch.capacity < (slot.reservedCount ?? 0)
+      )
+        return fail("Capacity cannot be lower than current reservations", 422);
+      if ((slot.reservedCount ?? 0) > 0 && ("start" in patch || "end" in patch))
+        return fail(
+          "Reserved slots cannot be moved. Create a new slot and review rescheduling requests instead.",
+          409,
+        );
+    }
+    if (name in adminRecordSchemas) {
+      const schema =
+        adminRecordSchemas[name as keyof typeof adminRecordSchemas];
+      const value = { ...(existing as Record<string, unknown>), ...patch };
+      for (const field of [
+        "_id",
+        "__v",
+        "createdAt",
+        "updatedAt",
+        "reservedCount",
+      ])
+        delete value[field];
+      schema.parse(value);
+    }
+    const validatedPatch =
+      name === "reviews"
+        ? {
+            approved: z.boolean().parse(patch.approved),
+            reviewedBy: user.id,
+            reviewedAt: new Date(),
+          }
+        : patch;
     const doc = await models[name].findByIdAndUpdate(
       id,
-      { $set: patch },
+      { $set: validatedPatch },
       { new: true, runValidators: true },
     );
     if (!doc) return fail("Not found", 404);

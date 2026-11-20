@@ -3,12 +3,44 @@ import { postcode } from "@/lib/validation";
 export const objectId = z.string().regex(/^[a-f\d]{24}$/i);
 export const pence = z.number().int().safe().min(0).max(100_000_000);
 const date = z.string().date();
+export const driverRegistrationSchema = z
+  .object({
+    name: z.string().trim().min(2).max(100),
+    email: z.string().trim().email().max(254).toLowerCase(),
+    phone: z.string().trim().min(8).max(30),
+    basedIn: z.string().trim().min(2).max(100),
+    postcode,
+    hasFullUkLicence: z.literal(true, {
+      errorMap: () => ({
+        message: "You need a full UK driving licence to apply.",
+      }),
+    }),
+    ownsVan: z.boolean(),
+    vehicleMakeModel: z.string().trim().max(100).optional(),
+    vanSize: z.string().trim().max(80).optional(),
+  })
+  .superRefine((data, context) => {
+    if (data.ownsVan) {
+      for (const key of ["vehicleMakeModel", "vanSize"] as const)
+        if (!data[key] || data[key]!.length < 2)
+          context.addIssue({
+            code: "custom",
+            path: [key],
+            message: "Tell us about your van.",
+          });
+    }
+  });
+
 export const applicationSchema = z
   .object({
     legalName: z.string().trim().min(2).max(100),
     dateOfBirth: date,
     phone: z.string().min(8).max(30),
     postcode,
+    basedIn: z.string().trim().min(2).max(100),
+    hasFullUkLicence: z.literal(true),
+    ownsVan: z.boolean(),
+    vanSize: z.string().trim().min(2).max(80).optional(),
     licenceCountry: z.string().min(2).max(80),
     licenceCategories: z.array(z.string().max(15)).min(1).max(12),
     yearsHeld: z.number().int().min(0).max(80),
@@ -18,15 +50,15 @@ export const applicationSchema = z
     disqualified: z.boolean(),
     endorsements: z.string().max(1000),
     licenceExpiresAt: date,
-    vehicleRegistration: z.string().min(2).max(20),
-    vehicleMakeModel: z.string().min(2).max(100),
-    vehicleClass: z.string().min(1).max(80),
-    maximumWeightKg: z.number().positive().max(44000),
-    capacityKg: z.number().positive().max(30000),
-    capacityM3: z.number().positive().max(100),
-    insuranceExpiresAt: date,
-    motExpiresAt: date,
-    vehicleTaxConfirmed: z.literal(true),
+    vehicleRegistration: z.string().min(2).max(20).optional(),
+    vehicleMakeModel: z.string().min(2).max(100).optional(),
+    vehicleClass: z.string().min(1).max(80).optional(),
+    maximumWeightKg: z.number().positive().max(44000).optional(),
+    capacityKg: z.number().positive().max(30000).optional(),
+    capacityM3: z.number().positive().max(100).optional(),
+    insuranceExpiresAt: date.optional(),
+    motExpiresAt: date.optional(),
+    vehicleTaxConfirmed: z.boolean().optional(),
     carrierReference: z.string().min(2).max(100),
     carrierRelationship: z.string().min(2).max(300),
     carrierExpiresAt: date,
@@ -72,11 +104,15 @@ export const applicationSchema = z
           expiresAt: date.optional(),
         }),
       )
-      .min(8)
+      .min(3)
       .max(20),
   })
   .superRefine((data, context) => {
-    if (data.capacityKg > data.maximumWeightKg)
+    if (
+      data.capacityKg != null &&
+      data.maximumWeightKg != null &&
+      data.capacityKg > data.maximumWeightKg
+    )
       context.addIssue({
         code: "custom",
         path: ["capacityKg"],
@@ -88,16 +124,51 @@ export const applicationSchema = z
         path: ["availableUntil"],
         message: "End time must be after start time",
       });
-    for (const kind of [
-      "identity",
-      "licence",
-      "insurance",
-      "carrier",
-      "vehicle_front",
-      "vehicle_side",
-      "vehicle_load",
-      "mot",
-    ]) {
+    if (data.ownsVan) {
+      for (const key of [
+        "vanSize",
+        "vehicleRegistration",
+        "vehicleMakeModel",
+        "vehicleClass",
+        "maximumWeightKg",
+        "capacityKg",
+        "capacityM3",
+        "insuranceExpiresAt",
+        "motExpiresAt",
+      ] as const) {
+        if (data[key] == null)
+          context.addIssue({
+            code: "custom",
+            path: [key],
+            message: "Required for your own van",
+          });
+      }
+      if (data.vehicleTaxConfirmed !== true)
+        context.addIssue({
+          code: "custom",
+          path: ["vehicleTaxConfirmed"],
+          message: "Confirm vehicle tax and insured use",
+        });
+    }
+    if (data.workModel !== (data.ownsVan ? "own_vehicle" : "company_vehicle"))
+      context.addIssue({
+        code: "custom",
+        path: ["workModel"],
+        message: "Work model must match van ownership",
+      });
+    const requiredKinds = data.ownsVan
+      ? [
+          "identity",
+          "licence",
+          "insurance",
+          "carrier",
+          "vehicle_front",
+          "vehicle_side",
+          "vehicle_load",
+          "mot",
+        ]
+      : ["identity", "licence", "carrier"];
+    for (const kind of requiredKinds) {
       if (!data.documents.some((document) => document.kind === kind))
         context.addIssue({
           code: "custom",

@@ -1582,7 +1582,8 @@ svg {
   color: #768f7a;
 }
 /* Booking pages */
-body:has(.booking-page) > .footer {
+body:has(.booking-page) > .footer,
+body:has(#main-content form):not(:has(#main-content .home-hero)) > .footer {
   display: none;
 }
 .booking-page {

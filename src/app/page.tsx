@@ -181,7 +181,7 @@ export default function Home() {
         <div className="container">
           {/* <span className="eyebrow">SMALL EFFORT. BIG DIFFERENCE.</span> */}
           <h2 className="section-title">
-            Waste Removal In  <span>3 Steps.</span>
+            Waste Removal In <span>3 Steps.</span>
           </h2>
           <p className="section-description">
             Your space back, in three simple steps.

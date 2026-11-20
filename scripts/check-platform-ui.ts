@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import { randomBytes } from "node:crypto";
 import { SignJWT } from "jose";
-import { User, Booking } from "../src/lib/models";
+import { User, Booking, Organization } from "../src/lib/models";
 import { DriverApplication } from "../src/lib/operations/models";
 async function main() {
   const directory = resolve(process.argv[2] ?? ".");
@@ -38,6 +38,23 @@ async function main() {
       passwordHash: "not-a-login",
       role: "customer",
     });
+    const business = await User.create({
+      name: "UI test manager",
+      email: "business@example.test",
+      passwordHash: "not-a-login",
+      role: "business",
+    });
+    const organization = await Organization.create({
+      name: "UI test business",
+      legalName: "UI Test Business",
+      managerId: business._id,
+      billingEmail: "billing@example.test",
+      sites: [],
+    });
+    await User.updateOne(
+      { _id: business._id },
+      { $set: { organizationId: organization._id } },
+    );
     const application = await DriverApplication.create({
       userId: driver._id,
       legalName: "UI test applicant",
@@ -95,8 +112,44 @@ async function main() {
       await new Promise((done) => setTimeout(done, 250));
     }
     if (!ready) throw Error(`UI server did not start: ${logs}`);
+    const coverage = await fetch(origin + "/api/coverage/check", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ postcode: "invalid" }),
+    });
+    if (coverage.status !== 422)
+      throw Error(
+        `Coverage route missing or not validating input: ${coverage.status}`,
+      );
     browser = await chromium.launch({ headless: true });
     const scenarios = [
+      { path: "/", role: "public", userId: "" },
+      { path: "/forgot-password", role: "public", userId: "" },
+      {
+        path: "/reset-password?token=" + "a".repeat(64),
+        role: "public",
+        userId: "",
+      },
+      ...[
+        "/admin/settings",
+        "/admin/pricing",
+        "/admin/catalog",
+        "/admin/slots",
+        "/admin/organizations",
+        "/admin/reviews",
+      ].map((path) => ({
+        path,
+        role: "superadmin",
+        userId: String(owner._id),
+      })),
+      ...["/portal/sites", "/portal/reports", "/portal/invoices"].map(
+        (path) => ({ path, role: "business", userId: String(business._id) }),
+      ),
+      {
+        path: `/account/bookings/${booking._id}`,
+        role: "customer",
+        userId: String(customer._id),
+      },
       { path: "/work-with-us", role: "public", userId: "" },
       { path: "/driver/login", role: "public", userId: "" },
       { path: "/driver/apply", role: "driver", userId: String(driver._id) },

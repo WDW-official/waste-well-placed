@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api, localDate } from "@/lib/operations/client";
+import { CompanyVehicleForm } from "./company-vehicle-form";
 import { Select } from "@/components/select";
 type Application = {
   _id: string;
@@ -11,6 +12,10 @@ type Application = {
   dateOfBirth?: string;
   postcode?: string;
   phone?: string;
+  basedIn?: string;
+  hasFullUkLicence?: boolean;
+  ownsVan?: boolean;
+  vanSize?: string;
   points?: number;
   disqualified?: boolean;
   endorsements?: string;
@@ -36,7 +41,7 @@ type Application = {
 export function DriverReview({ id }: { id: string }) {
   const [data, setData] = useState<{
     application: Application;
-    account: { name: string; email: string };
+    account: { name: string; email: string; driverPasswordPending?: boolean };
     drivingCheck?: { licenceLastEight: string; dvlaCheckCode: string };
   } | null>(null);
   const [checks, setChecks] = useState<Record<string, boolean>>({});
@@ -71,12 +76,19 @@ export function DriverReview({ id }: { id: string }) {
         </span>
         <h2>{app.legalName ?? data.account.name}</h2>
         <p>
-          {data.account.email} · {app.phone} · {app.postcode}
+          {data.account.email} · {app.phone} · {app.basedIn} · {app.postcode}
         </p>
         <div className="platform-detail-grid">
           <div>
             <h3>Driving entitlement</h3>
             <p>
+              Full UK driving licence:{" "}
+              {app.hasFullUkLicence == null
+                ? "Not recorded"
+                : app.hasFullUkLicence
+                  ? "Yes"
+                  : "No"}
+              <br />
               DOB: {app.dateOfBirth?.slice(0, 10)}
               <br />
               Categories: {app.licenceCategories.join(", ")}
@@ -105,6 +117,15 @@ export function DriverReview({ id }: { id: string }) {
           <div>
             <h3>Vehicle & insurance</h3>
             <p>
+              Owns a van:{" "}
+              {app.ownsVan == null
+                ? "Not recorded"
+                : app.ownsVan
+                  ? "Yes"
+                  : "No — company vehicle required"}
+              <br />
+              Van size: {app.vanSize ?? "Not provided"}
+              <br />
               {app.vehicleRegistration} · {app.vehicleMakeModel}
               <br />
               {app.vehicleClass} · {app.capacityKg} kg / {app.capacityM3} m³
@@ -148,6 +169,13 @@ export function DriverReview({ id }: { id: string }) {
           ))}
         </div>
       </section>
+      {app.ownsVan === false && app.status !== "active" && (
+        <CompanyVehicleForm
+          id={id}
+          version={app.version}
+          onSaved={() => load()}
+        />
+      )}
       <form
         className="platform-card platform-form"
         onSubmit={async (event) => {
@@ -186,6 +214,12 @@ export function DriverReview({ id }: { id: string }) {
         }}
       >
         <h2>Human review</h2>
+        {data.account.driverPasswordPending && (
+          <p className="platform-notice">
+            This applicant has no password yet. Approval and activation queues
+            an email with a secure password-setup link.
+          </p>
+        )}
         <p>
           Check the original documents and appropriate registers before
           confirming each check. No driver can approve themselves.

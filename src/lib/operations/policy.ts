@@ -43,6 +43,7 @@ export function ageOn(dateOfBirth: Date, now: Date) {
 }
 export type Eligibility = {
   status: string;
+  hasFullUkLicence?: boolean | null;
   dateOfBirth?: Date | null;
   points?: number | null;
   disqualified?: boolean | null;
@@ -66,6 +67,8 @@ export function eligibilityProblems(
   maxPoints = 6,
 ) {
   const problems: string[] = [];
+  if (driver.hasFullUkLicence === false)
+    problems.push("A full UK driving licence is required");
   if (!driver.dateOfBirth || ageOn(driver.dateOfBirth, now) < minAge)
     problems.push(`Minimum company policy age is ${minAge}`);
   if (driver.points == null || driver.points > maxPoints || driver.points < 0)

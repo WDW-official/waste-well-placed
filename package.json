@@ -13,7 +13,8 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "migrate:platform": "tsx scripts/migrate-platform.ts",
     "seed:platform-test": "tsx scripts/seed-platform-test.ts",
-    "check:platform-ui": "tsx scripts/check-platform-ui.ts"
+    "check:platform-ui": "tsx scripts/check-platform-ui.ts",
+    "migrate:audit": "tsx scripts/migrate-audit-fixes.ts"
   },
   "dependencies": {
     "next": "^15.5.0",

@@ -1,3 +1,4 @@
+import { BusinessReports } from "@/components/business-reports";
 import { DashLayout } from "@/components/dash-layout";
 export default function Reports() {
   return (
@@ -12,10 +13,7 @@ export default function Reports() {
         { name: "Invoices", href: "/portal/invoices" },
       ]}
     >
-      <div className="card p-7">
-        Reports reflect only completed, verified collections. Export and
-        automated recurring reporting require business onboarding.
-      </div>
+      <BusinessReports />
     </DashLayout>
   );
 }

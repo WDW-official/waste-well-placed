@@ -111,6 +111,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
         value={form.password}
         onChange={(e) => setForm((x) => ({ ...x, password: e.target.value }))}
       />
+      {mode === "login" && (
+        <Link className="text-sm underline mt-3 block" href="/forgot-password">
+          Forgot your password?
+        </Link>
+      )}
       <p className="text-xs muted mt-2">
         {mode === "register"
           ? "Minimum 12 characters."

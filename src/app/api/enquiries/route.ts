@@ -1,3 +1,4 @@
+import { rateLimit } from "@/lib/operations/rate-limit";
 import { audit, notifyStaff } from "@/lib/operations/events";
 import { enquirySchema } from "@/lib/validation";
 import { connectDB } from "@/lib/db";
@@ -8,6 +9,7 @@ export async function POST(req: Request) {
   try {
     const data = enquirySchema.parse(await req.json());
     const db = await connectDB();
+    await rateLimit(req, "public-enquiry", 15);
     await db.connection.transaction(async (session) => {
       const [enquiry] = await Enquiry.create([data], { session });
       await audit(

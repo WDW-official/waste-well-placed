@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/operations/client";
 import { PrivateFileInput } from "@/components/private-file-input";
-import { Select } from "@/components/select";
+import { DriverEmailAccess } from "./driver-email-access";
 type Application = {
   status: string;
   version: number;
@@ -26,6 +26,7 @@ const fields: { key: string; label: string; type?: string; help?: string }[][] =
       { key: "dateOfBirth", label: "Date of birth", type: "date" },
       { key: "phone", label: "UK phone", type: "tel" },
       { key: "postcode", label: "Residential postcode" },
+      { key: "basedIn", label: "Where are you based? (town or city)" },
     ],
     [
       { key: "licenceCountry", label: "Licence issuing country" },
@@ -51,7 +52,11 @@ const fields: { key: string; label: string; type?: string; help?: string }[][] =
     ],
     [
       { key: "vehicleRegistration", label: "Vehicle registration" },
-      { key: "vehicleMakeModel", label: "Make and model" },
+      {
+        key: "vehicleMakeModel",
+        label: "What van do you own? (make and model)",
+      },
+      { key: "vanSize", label: "What size is your van?" },
       { key: "vehicleClass", label: "Vehicle class" },
       {
         key: "maximumWeightKg",
@@ -124,7 +129,11 @@ const documentKinds = [
   "vehicle_load",
   "mot",
 ];
-export function DriverApplicationForm() {
+export function DriverApplicationForm({
+  passwordPending = false,
+}: {
+  passwordPending?: boolean;
+}) {
   const [application, setApplication] = useState<Application | null>(null);
   const [values, setValues] = useState<Record<string, string>>({
     licenceCountry: "United Kingdom",
@@ -207,6 +216,9 @@ export function DriverApplicationForm() {
         safety: !!checks.safety,
         contract: !!checks.contract,
       },
+      hasFullUkLicence: values.hasFullUkLicence === "true",
+      ownsVan: values.ownsVan === "true",
+      workModel: values.ownsVan === "true" ? "own_vehicle" : "company_vehicle",
       disqualified: !!checks.disqualified,
       vehicleTaxConfirmed: !!checks.vehicleTaxConfirmed,
     };
@@ -227,9 +239,28 @@ export function DriverApplicationForm() {
       .split(",")
       .filter(Boolean)
       .map(Number);
-    result.documents = Object.entries(documents).flatMap(([kind, ids]) =>
-      ids.map((assetId) => ({ kind, assetId })),
-    );
+    if (values.ownsVan !== "true") {
+      for (const key of [
+        "vanSize",
+        "vehicleRegistration",
+        "vehicleMakeModel",
+        "vehicleClass",
+        "maximumWeightKg",
+        "capacityKg",
+        "capacityM3",
+        "insuranceExpiresAt",
+        "motExpiresAt",
+        "vehicleTaxConfirmed",
+      ])
+        delete result[key];
+    }
+    result.documents = Object.entries(documents)
+      .filter(
+        ([kind]) =>
+          values.ownsVan === "true" ||
+          ["identity", "licence", "carrier"].includes(kind),
+      )
+      .flatMap(([kind, ids]) => ids.map((assetId) => ({ kind, assetId })));
     return result;
   }
   async function save(action: "draft" | "submit") {
@@ -265,9 +296,20 @@ export function DriverApplicationForm() {
           {application.reviewNotes ||
             "Our team will review your application and documents."}
         </p>
-        <Link className="btn btn-primary mt-4" href="/driver">
-          Go to driver workspace
-        </Link>
+        {passwordPending ? (
+          <>
+            <p className="mt-4">
+              {application.status === "active"
+                ? "Your application is approved. Check your email for a secure link to set your password."
+                : "We’ll email you when your application has been reviewed. You do not need a password yet."}
+            </p>
+            {application.status === "active" && <DriverEmailAccess />}
+          </>
+        ) : (
+          <Link className="btn btn-primary mt-4" href="/driver">
+            Go to driver workspace
+          </Link>
+        )}
       </div>
     );
   return (
@@ -275,6 +317,15 @@ export function DriverApplicationForm() {
       className="platform-card platform-form"
       onSubmit={(event) => {
         event.preventDefault();
+        if (step === 1 && values.hasFullUkLicence !== "true") {
+          setError("You’re not eligible without a full UK driving licence.");
+          return;
+        }
+        if (step === 2 && !["true", "false"].includes(values.ownsVan)) {
+          setError("Tell us whether you own a van.");
+          return;
+        }
+        setError("");
         if (step < stages.length - 1) setStep(step + 1);
         else void save("submit");
       }}
@@ -290,8 +341,55 @@ export function DriverApplicationForm() {
       {application?.reviewNotes && (
         <p className="platform-notice">{application.reviewNotes}</p>
       )}
+      {(step === 1 || step === 2) && (
+        <fieldset>
+          <legend className="font-bold mb-3">
+            {step === 1
+              ? "Do you have a full UK driving licence?"
+              : "Do you own a van?"}
+          </legend>
+          <div className="flex flex-wrap gap-5">
+            {["true", "false"].map((answer) => (
+              <label className="platform-checkbox" key={answer}>
+                <input
+                  type="radio"
+                  name={step === 1 ? "hasFullUkLicence" : "ownsVan"}
+                  required
+                  checked={
+                    values[step === 1 ? "hasFullUkLicence" : "ownsVan"] ===
+                    answer
+                  }
+                  onChange={() =>
+                    setValues((current) => ({
+                      ...current,
+                      [step === 1 ? "hasFullUkLicence" : "ownsVan"]: answer,
+                    }))
+                  }
+                />
+                {answer === "true" ? "Yes" : "No"}
+              </label>
+            ))}
+          </div>
+          {step === 1 && values.hasFullUkLicence === "false" && (
+            <p className="platform-notice" role="status">
+              You’re not eligible to apply without a full UK driving licence.
+            </p>
+          )}
+          {step === 2 && values.ownsVan === "false" && (
+            <p className="muted">
+              Company-vehicle work is subject to availability. Our team must
+              confirm vehicle, insurance and roadworthiness requirements before
+              activation.
+            </p>
+          )}
+        </fieldset>
+      )}
       <div className="platform-form-grid">
-        {(fields[step] ?? []).map((field) => (
+        {((step === 1 && values.hasFullUkLicence !== "true") ||
+        (step === 2 && values.ownsVan !== "true")
+          ? []
+          : (fields[step] ?? [])
+        ).map((field) => (
           <label key={field.key}>
             {field.label}
             <input
@@ -322,7 +420,7 @@ export function DriverApplicationForm() {
           I currently have a driving disqualification
         </label>
       )}
-      {step === 2 && (
+      {step === 2 && values.ownsVan === "true" && (
         <label className="platform-checkbox">
           <input
             type="checkbox"
@@ -340,22 +438,13 @@ export function DriverApplicationForm() {
         </label>
       )}
       {step === 4 && (
-        <label>
-          Work model
-          <Select
-            value={values.workModel}
-            onValueChange={(value) =>
-              setValues({ ...values, workModel: value })
-            }
-            options={[
-              { value: "own_vehicle", label: "Own vehicle" },
-              {
-                value: "company_vehicle",
-                label: "Company vehicle (subject to availability)",
-              },
-            ]}
-          />
-        </label>
+        <p className="muted">
+          Work model:{" "}
+          {values.ownsVan === "true"
+            ? "Your own van"
+            : "Company vehicle, subject to availability and review"}
+          .
+        </p>
       )}
       {step === 5 && (
         <>
@@ -364,17 +453,23 @@ export function DriverApplicationForm() {
             are private. Vehicle photographs should show the actual vehicle.
           </p>
           <div className="platform-form-grid">
-            {documentKinds.map((kind) => (
-              <PrivateFileInput
-                key={kind}
-                label={kind.replaceAll("_", " ")}
-                purpose="driver_document"
-                value={documents[kind] ?? []}
-                onChange={(ids) =>
-                  setDocuments((current) => ({ ...current, [kind]: ids }))
-                }
-              />
-            ))}
+            {documentKinds
+              .filter(
+                (kind) =>
+                  values.ownsVan === "true" ||
+                  ["identity", "licence", "carrier"].includes(kind),
+              )
+              .map((kind) => (
+                <PrivateFileInput
+                  key={kind}
+                  label={kind.replaceAll("_", " ")}
+                  purpose="driver_document"
+                  value={documents[kind] ?? []}
+                  onChange={(ids) =>
+                    setDocuments((current) => ({ ...current, [kind]: ids }))
+                  }
+                />
+              ))}
           </div>
         </>
       )}
@@ -449,7 +544,14 @@ export function DriverApplicationForm() {
         >
           Save progress
         </button>
-        <button className="btn btn-primary" disabled={busy || !application}>
+        <button
+          className="btn btn-primary"
+          disabled={
+            busy ||
+            !application ||
+            (step === 1 && values.hasFullUkLicence !== "true")
+          }
+        >
           {busy
             ? "Saving…"
             : step === stages.length - 1

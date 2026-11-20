@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { AdminCreateRecord } from "./admin-create-record";
 import { Select } from "@/components/select";
 import { DashLayout } from "@/components/dash-layout";
 import { adminLinks } from "@/lib/admin-links";
@@ -17,6 +18,8 @@ export function AdminResource({
   fields: string[];
   editable?: boolean;
 }) {
+  const [canCreate, setCanCreate] = useState(false);
+  const [editableFields, setEditableFields] = useState<string[]>([]);
   const [rows, setRows] = useState<Row[]>([]),
     [loading, setLoading] = useState(true),
     [page, setPage] = useState(1),
@@ -32,6 +35,8 @@ export function AdminResource({
         const j = await r.json();
         if (!r.ok) throw Error(j.error);
         setRows(j.rows);
+        setCanCreate(j.canCreate === true);
+        setEditableFields(j.editableFields ?? []);
         setCount(j.count);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Could not load data");
@@ -72,6 +77,7 @@ export function AdminResource({
   }
   return (
     <DashLayout type="Operations" title={title} links={adminLinks}>
+      {canCreate && <AdminCreateRecord name={name} onCreated={() => load(1)} />}
       <div className="flex items-center justify-between mb-5 gap-4">
         <input
           className="input max-w-md"
@@ -120,7 +126,8 @@ export function AdminResource({
                         .filter(
                           (field) =>
                             !field.startsWith("_") &&
-                            !field.includes("password"),
+                            !field.includes("password") &&
+                            editableFields.includes(field),
                         )
                         .map((field) => ({ value: field, label: field }))}
                     />

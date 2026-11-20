@@ -17,7 +17,11 @@ export async function POST(req: Request) {
       email: data.email.toLowerCase(),
       role: "driver",
     });
-    if (!user || !(await bcrypt.compare(data.password, user.passwordHash)))
+    if (
+      !user ||
+      user.driverPasswordPending ||
+      !(await bcrypt.compare(data.password, user.passwordHash))
+    )
       return fail("Invalid driver credentials", 401);
     await createSession({ id: String(user._id), role: "driver" });
     return ok({ signedIn: true });

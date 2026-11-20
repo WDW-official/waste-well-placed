@@ -13,6 +13,11 @@ export async function PATCH(req: Request) {
   try {
     const user = await requireUser();
     requireCondition(user.role === "driver", "Driver account required", 403);
+    requireCondition(
+      !user.driverPasswordPending,
+      "Set your password using the approval email before accessing driver work.",
+      403,
+    );
     const data = z
       .object({ online: z.boolean(), until: z.string().datetime().optional() })
       .parse(await req.json());

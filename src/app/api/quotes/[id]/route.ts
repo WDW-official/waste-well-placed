@@ -154,6 +154,8 @@ export async function POST(
           {
             reference: quote.reference?.replace("QUOTE", "WWP"),
             userId: user.id,
+            organizationId: user.organizationId || undefined,
+            checkoutExpiresAt: new Date(Date.now() + 3600_000),
             quoteId: quote._id,
             idempotencyKey: `quote:${quote._id}`,
             source: "photo_quote",

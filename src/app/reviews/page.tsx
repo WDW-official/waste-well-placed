@@ -1,17 +1,13 @@
 import { PageTitle } from "@/components/page-title";
+import { PublicReviews } from "@/components/public-reviews";
 export default function Reviews() {
   return (
     <>
       <PageTitle
         title="Customer reviews"
-        desc="Genuine, approved customer reviews will appear here following completed collections."
+        desc="Reviews from customers with completed, verified collections."
       />
-      <div className="container section">
-        <p className="card p-8">
-          No verified reviews have been published yet. We do not invent ratings
-          or testimonials.
-        </p>
-      </div>
+      <PublicReviews />
     </>
   );
 }

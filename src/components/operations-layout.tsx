@@ -22,6 +22,8 @@ export async function OperationsLayout({
           { name: "Quotes", href: "/admin/quotes" },
           { name: "Issues", href: "/admin/issues" },
           { name: "Business enquiries", href: "/admin/enquiries" },
+          { name: "Organisations", href: "/admin/organizations" },
+          { name: "Company & launch", href: "/admin/settings" },
         ]
       : []),
     ...(permitted(role, "drivers")
@@ -40,6 +42,11 @@ export async function OperationsLayout({
       ? [
           { name: "Tariffs & areas", href: "/admin/pricing" },
           { name: "Notifications", href: "/admin/notifications" },
+          { name: "Reviews", href: "/admin/reviews" },
+          { name: "Catalog", href: "/admin/catalog" },
+          { name: "Slots", href: "/admin/slots" },
+          { name: "Areas", href: "/admin/areas" },
+          { name: "Content", href: "/admin/content" },
         ]
       : []),
   ];

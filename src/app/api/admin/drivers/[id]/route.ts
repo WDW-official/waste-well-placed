@@ -9,6 +9,7 @@ import {
 import { checksSchema, objectId } from "@/lib/operations/validation";
 import { eligibilityProblems } from "@/lib/operations/policy";
 import { audit, notify } from "@/lib/operations/events";
+import { queueDriverAccess } from "@/lib/operations/driver-access";
 import { User } from "@/lib/models";
 import { ensureSameOrigin, fail, ok, errorResponse } from "@/lib/http";
 export async function GET(
@@ -23,7 +24,7 @@ export async function GET(
     ).lean();
     requireCondition(application, "Application not found", 404);
     const account = await User.findById(application.userId)
-      .select("email name")
+      .select("email name driverPasswordPending")
       .lean();
     let drivingCheck:
       { licenceLastEight: string; dvlaCheckCode: string } | undefined;
@@ -145,19 +146,27 @@ export async function PATCH(
       const account = await User.findById(driver.userId)
         .session(session)
         .lean();
-      await notify(
-        {
-          key: `driver:${id}:${data.version}`,
-          event: "driver_review",
-          reference: id,
-          recipientId: String(driver.userId),
-          email: account?.email,
-          subject: "Your driver application has an update",
-          message: `Application status: ${data.status.replaceAll("_", " ")}. ${data.note}`,
-          href: "/driver",
-        },
-        session,
-      );
+      if (data.status === "active" && account?.driverPasswordPending) {
+        await queueDriverAccess(
+          String(driver.userId),
+          account.email,
+          "password_setup",
+          session,
+        );
+      } else
+        await notify(
+          {
+            key: `driver:${id}:${data.version}`,
+            event: "driver_review",
+            reference: id,
+            recipientId: String(driver.userId),
+            email: account?.email,
+            subject: "Your driver application has an update",
+            message: `Application status: ${data.status.replaceAll("_", " ")}. ${data.note}`,
+            href: "/driver",
+          },
+          session,
+        );
     });
     return ok({ updated: true });
   } catch (error) {

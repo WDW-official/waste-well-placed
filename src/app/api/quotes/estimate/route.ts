@@ -1,6 +1,6 @@
 import { estimateSchema } from "@/lib/validation";
 import { findZone } from "@/lib/coverage";
-import { priceEstimate } from "@/lib/pricing";
+import { quotePrice } from "@/lib/catalog";
 import { ok, errorResponse, fail, ensureSameOrigin } from "@/lib/http";
 export async function POST(req: Request) {
   if (!ensureSameOrigin(req)) return fail("Invalid origin", 403);
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
         "Special handling requires a manual quote; please use photo quote",
         422,
       );
-    const estimate = priceEstimate(payload, zone.surchargeMinor);
+    const estimate = await quotePrice(payload, zone.surchargeMinor);
     return ok({ estimate, zone: { id: String(zone._id), name: zone.name } });
   } catch (e) {
     if (e instanceof Error && e.message.startsWith("Unknown"))

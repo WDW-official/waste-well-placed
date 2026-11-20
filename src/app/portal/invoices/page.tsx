@@ -1,3 +1,4 @@
+import { BusinessInvoices } from "@/components/business-invoices";
 import { DashLayout } from "@/components/dash-layout";
 export default function Invoices() {
   return (
@@ -12,10 +13,7 @@ export default function Invoices() {
         { name: "Invoices", href: "/portal/invoices" },
       ]}
     >
-      <div className="card p-7">
-        Invoice downloads will appear once invoices are issued in the accounting
-        workflow. No dummy invoices are shown as official VAT invoices.
-      </div>
+      <BusinessInvoices />
     </DashLayout>
   );
 }

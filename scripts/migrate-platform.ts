@@ -2,8 +2,11 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 config();
 import mongoose from "mongoose";
+import "../src/lib/workflow-models";
+import { initialisePriceBook } from "../src/lib/catalog";
+import { releaseExpiredHolds } from "../src/lib/slot-holds";
 import { connectDB } from "../src/lib/db";
-import { Booking, Quote, User } from "../src/lib/models";
+import { Booking, Quote, User, Hold } from "../src/lib/models";
 import {
   DriverApplication,
   Issue,
@@ -36,6 +39,10 @@ async function main() {
     );
     return;
   }
+  const holdIndexes = await Hold.collection.indexes().catch(() => []);
+  for (const index of holdIndexes)
+    if (index.expireAfterSeconds !== undefined && index.key?.expiresAt)
+      await Hold.collection.dropIndex(index.name!);
   // Additive/backfillable changes only. Do not infer compliance or approve a driver.
   await Booking.updateMany({ quoteId: null }, { $unset: { quoteId: "" } });
   await Booking.updateMany(
@@ -104,6 +111,8 @@ async function main() {
     await model.createCollection();
     await model.createIndexes();
   }
+  await initialisePriceBook();
+  await releaseExpiredHolds();
   console.log(
     "Additive migration complete. Historical public uploads are reported but not reclassified or deleted. No policy, driver, facility or payout was approved.",
   );

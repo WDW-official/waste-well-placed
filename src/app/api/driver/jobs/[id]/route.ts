@@ -53,6 +53,11 @@ export async function POST(
   try {
     const user = await requireUser();
     requireCondition(user.role === "driver", "Driver account required", 403);
+    requireCondition(
+      !user.driverPasswordPending,
+      "Set your password using the approval email before accessing driver work.",
+      403,
+    );
     const id = objectId.parse((await params).id);
     const data = actions.parse(await req.json());
     await connectDB();

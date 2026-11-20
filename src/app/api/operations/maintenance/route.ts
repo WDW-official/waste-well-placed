@@ -1,3 +1,5 @@
+import { processRefunds } from "@/lib/refunds";
+import { releaseExpiredHolds } from "@/lib/slot-holds";
 import { connectDB } from "@/lib/db";
 import { Assignment, DriverApplication } from "@/lib/operations/models";
 import { hashToken, requireCondition } from "@/lib/operations/security";
@@ -15,6 +17,7 @@ export async function POST(req: Request) {
       403,
     );
     await connectDB();
+    await releaseExpiredHolds();
     const expired = await Assignment.find({
       status: "offered",
       live: true,
@@ -65,6 +68,7 @@ export async function POST(req: Request) {
     return ok({
       expiredOffers: expired.length,
       delivered: await deliverNotifications(),
+      refundsProcessed: await processRefunds(),
     });
   } catch (error) {
     return errorResponse(error);

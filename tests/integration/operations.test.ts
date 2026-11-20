@@ -9,24 +9,41 @@ import {
 } from "vitest";
 import { MongoMemoryReplSet } from "mongodb-memory-server";
 import mongoose, { type Model } from "mongoose";
-const provider = vi.hoisted(() => ({ event: null as unknown }));
+const provider = vi.hoisted(() => ({
+  event: null as unknown,
+  refund: vi.fn(),
+  refundLookup: vi.fn(),
+  charge: vi.fn(),
+  checkout: vi.fn(),
+}));
 vi.mock("@/lib/stripe", () => ({
-  stripeClient: () => ({ webhooks: { constructEvent: () => provider.event } }),
+  stripeClient: () => ({
+    webhooks: { constructEvent: () => provider.event },
+    refunds: { create: provider.refund, retrieve: provider.refundLookup },
+    charges: { retrieve: provider.charge },
+    checkout: { sessions: { create: provider.checkout } },
+  }),
 }));
 const actor = vi.hoisted(() => ({
   id: "",
   role: "admin",
   email: "ops@example.test",
   name: "Test operator",
-  organizationId: null,
+  organizationId: null as string | null,
 }));
-vi.mock("@/lib/auth", () => ({ getSession: vi.fn(async () => actor) }));
+const createdSession = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/auth", () => ({
+  getSession: vi.fn(async () => actor),
+  createSession: createdSession,
+}));
 vi.mock("next/headers", () => ({
   cookies: vi.fn(async () => ({ get: () => undefined })),
 }));
 import { connectDB } from "@/lib/db";
 import {
   Booking,
+  Catalog,
+  Organization,
   Quote,
   User,
   Audit,
@@ -64,12 +81,47 @@ import { GET as privateAsset } from "@/app/api/assets/[id]/route";
 import { PATCH as reviewDriver } from "@/app/api/admin/drivers/[id]/route";
 import { POST as settle } from "@/app/api/operations/payouts/[id]/route";
 import { POST as createBooking } from "@/app/api/bookings/route";
+import { POST as registerDriver } from "@/app/api/driver/register/route";
+import { POST as driverAccess } from "@/app/api/driver/access/route";
+import { POST as requestDriverAccess } from "@/app/api/driver/request-access/route";
+import { hashToken } from "@/lib/operations/security";
+import bcrypt from "bcryptjs";
+import {
+  Tariff,
+  CompanyProfile,
+  BookingChange,
+  RefundRequest,
+  Invoice,
+  Counter,
+  Review,
+} from "@/lib/workflow-models";
+import { quotePrice } from "@/lib/catalog";
+import { releaseExpiredHolds } from "@/lib/slot-holds";
+import { POST as reserveSlot } from "@/app/api/slot-holds/route";
+import { POST as forgotPassword } from "@/app/api/auth/forgot-password/route";
+import { POST as resetPassword } from "@/app/api/auth/reset-password/route";
+import { POST as requestChange } from "@/app/api/bookings/[id]/changes/route";
+import { POST as reviewChange } from "@/app/api/operations/bookings/[id]/changes/route";
+import { POST as issueInvoice } from "@/app/api/operations/bookings/[id]/invoice/route";
+import { POST as companyVehicle } from "@/app/api/admin/drivers/[id]/vehicle/route";
+import { processRefunds } from "@/lib/refunds";
+import { GET as report } from "@/app/api/business/reports/route";
+import { POST as onboardBusiness } from "@/app/api/operations/organizations/route";
 let replica: MongoMemoryReplSet;
 let driverId: string;
 let bookingId: string;
 let facilityId: string;
 const models: Model<unknown>[] = [
   Booking,
+  Catalog,
+  Organization,
+  Tariff,
+  CompanyProfile,
+  BookingChange,
+  RefundRequest,
+  Invoice,
+  Counter,
+  Review,
   Quote,
   User,
   Audit,
@@ -108,6 +160,12 @@ afterAll(async () => {
 });
 beforeEach(async () => {
   for (const model of models) await model.deleteMany({});
+  actor.organizationId = null;
+  delete process.env.STRIPE_SECRET_KEY;
+  provider.refund.mockReset();
+  provider.refundLookup.mockReset();
+  provider.charge.mockReset();
+  provider.checkout.mockReset();
   const customer = await User.create({
     name: "Test customer",
     email: "customer@example.test",
@@ -683,4 +741,698 @@ describe("specialist load checkout", () => {
       expect((await Hold.findById(hold._id))?.status).toBe("consumed");
     },
   );
+});
+
+describe("passwordless driver applications and approval access", () => {
+  const start = {
+    name: "New applicant",
+    email: "new-driver@example.test",
+    phone: "07123456789",
+    basedIn: "London",
+    postcode: "E1 6AN",
+    hasFullUkLicence: true,
+    ownsVan: false,
+  };
+  const reviewChecks = {
+    identity: true,
+    licence: true,
+    insurance: true,
+    carrier: true,
+    vehicle: true,
+    contract: true,
+  };
+  async function approvePendingDriver() {
+    await User.updateOne(
+      { _id: driverId },
+      { $set: { driverPasswordPending: true } },
+    );
+    const app = await DriverApplication.findOne({ userId: driverId });
+    await DriverApplication.updateOne(
+      { _id: app!._id },
+      {
+        $set: {
+          status: "submitted",
+          hasFullUkLicence: true,
+          documents: [
+            "identity",
+            "licence",
+            "insurance",
+            "carrier",
+            "vehicle_front",
+            "vehicle_side",
+            "vehicle_load",
+            "mot",
+          ].map((kind, index) => ({
+            kind,
+            assetId: String(index + 1).repeat(24),
+          })),
+        },
+      },
+    );
+    const result = await reviewDriver(
+      request({
+        status: "active",
+        version: 0,
+        note: "All original evidence reviewed",
+        checks: reviewChecks,
+      }),
+      { params: Promise.resolve({ id: String(app!._id) }) },
+    );
+    expect(result.status).toBe(200);
+    const email = await Notification.findOne({
+      event: "driver_password_setup",
+      recipientId: driverId,
+    });
+    expect(email).toBeTruthy();
+    return new URL(email!.href!, "https://example.test").searchParams.get(
+      "token",
+    )!;
+  }
+  it("starts without a password, saves eligibility/location, and sends a single-use application link", async () => {
+    createdSession.mockClear();
+    const response = await registerDriver(
+      request({ ...start, password: "BrowserPasswordIsIgnored" }),
+    );
+    expect(response.status).toBe(201);
+    const user = await User.findOne({ email: start.email });
+    expect(user?.driverPasswordPending).toBe(true);
+    expect(
+      await bcrypt.compare("BrowserPasswordIsIgnored", user!.passwordHash),
+    ).toBe(false);
+    const app = await DriverApplication.findOne({ userId: user!._id });
+    expect(app).toMatchObject({
+      hasFullUkLicence: true,
+      ownsVan: false,
+      basedIn: "London",
+    });
+    const email = await Notification.findOne({
+      recipientId: user!._id,
+      event: "driver_application_access",
+    });
+    const token = new URL(
+      email!.href!,
+      "https://example.test",
+    ).searchParams.get("token")!;
+    expect(user?.driverAccessTokenHash).toBeUndefined();
+    expect(
+      (await driverAccess(request({ token, purpose: "application" }))).status,
+    ).toBe(200);
+    expect(
+      (await driverAccess(request({ token, purpose: "application" }))).status,
+    ).toBe(422);
+    expect(createdSession).toHaveBeenLastCalledWith({
+      id: String(user!._id),
+      role: "driver",
+      applicationOnly: true,
+    });
+  });
+  it("rejects applicants without a full UK licence on the server", async () => {
+    expect(
+      (await registerDriver(request({ ...start, hasFullUkLicence: false })))
+        .status,
+    ).toBe(422);
+    expect(await User.exists({ email: start.email })).toBeNull();
+  });
+  it("queues password setup only after approval and consumes the token atomically", async () => {
+    const token = await approvePendingDriver();
+    const pending = await User.findById(driverId).select(
+      "+driverAccessTokenHash",
+    );
+    expect(pending!.driverAccessTokenHash).toBe(hashToken(token));
+    const body = {
+      token,
+      purpose: "password_setup",
+      password: "NewApprovedPassword123!",
+    };
+    const results = await Promise.all([
+      driverAccess(request(body)),
+      driverAccess(request(body)),
+    ]);
+    expect(results.map((result) => result.status).sort()).toEqual([200, 422]);
+    const saved = await User.findById(driverId).select(
+      "+driverAccessTokenHash",
+    );
+    expect(saved!.driverPasswordPending).toBe(false);
+    expect(saved!.driverAccessTokenHash).toBeUndefined();
+    expect(await bcrypt.compare(body.password, saved!.passwordHash)).toBe(true);
+    expect(createdSession).toHaveBeenLastCalledWith({
+      id: driverId,
+      role: "driver",
+      applicationOnly: false,
+    });
+  });
+  it("refuses expired setup links and links revoked by suspension", async () => {
+    const token = await approvePendingDriver();
+    await User.updateOne(
+      { _id: driverId },
+      { $set: { driverAccessExpiresAt: new Date(Date.now() - 1000) } },
+    );
+    const body = {
+      token,
+      purpose: "password_setup",
+      password: "NewApprovedPassword123!",
+    };
+    expect((await driverAccess(request(body))).status).toBe(422);
+    await User.updateOne(
+      { _id: driverId },
+      { $set: { driverAccessExpiresAt: new Date(Date.now() + 3600_000) } },
+    );
+    await DriverApplication.updateOne(
+      { userId: driverId },
+      { $set: { status: "suspended" } },
+    );
+    expect((await driverAccess(request(body))).status).toBe(422);
+    expect((await User.findById(driverId))!.driverPasswordPending).toBe(true);
+  });
+  it("returns the same public response for unknown and pending application email addresses", async () => {
+    await registerDriver(request(start));
+    const known = await requestDriverAccess(request({ email: start.email }));
+    const unknown = await requestDriverAccess(
+      request({ email: "not-registered@example.test" }),
+    );
+    expect(known.status).toBe(200);
+    expect(unknown.status).toBe(200);
+    expect(await known.json()).toEqual(await unknown.json());
+  });
+});
+
+describe("audit regression fixes", () => {
+  async function owner() {
+    const user = await User.findOne({ email: "customer@example.test" });
+    actor.id = String(user!._id);
+    actor.role = "customer";
+    return user!;
+  }
+  async function staff() {
+    const user = await User.findOne({ role: "admin" });
+    actor.id = String(user!._id);
+    actor.role = "admin";
+    return user!;
+  }
+  async function reservation() {
+    const user = await owner();
+    const zone = await Zone.create({
+      name: "Audit zone",
+      prefixes: ["SW1A"],
+      active: true,
+    });
+    const slot = await Slot.create({
+      zoneId: zone._id,
+      start: new Date(Date.now() + 3600_000),
+      end: new Date(Date.now() + 7200_000),
+      capacity: 1,
+      reservedCount: 1,
+    });
+    const hold = await Hold.create({
+      userId: user._id,
+      slotId: slot._id,
+      expiresAt: new Date(Date.now() + 900_000),
+    });
+    return { user, zone, slot, hold };
+  }
+  it("uses edited catalog and load prices, and refuses disabled items", async () => {
+    await Catalog.create({
+      key: "chair",
+      title: "Updated chair",
+      category: "Furniture",
+      priceMinor: 12345,
+      active: true,
+    });
+    const data = {
+      kind: "items" as const,
+      postcode: "SW1A 1AA",
+      items: [{ key: "chair", qty: 1 }],
+      stairs: false,
+      longCarry: false,
+      specialHandling: false,
+    };
+    expect((await quotePrice(data)).subtotalMinor).toBe(12345);
+    await Catalog.updateOne({ key: "chair" }, { $set: { active: false } });
+    await expect(quotePrice(data)).rejects.toThrow("Unknown item");
+    await Tariff.create({
+      key: "garden-full",
+      title: "Garden full load",
+      priceMinor: 49900,
+    });
+    expect(
+      (
+        await quotePrice({
+          kind: "load",
+          postcode: "SW1A 1AA",
+          loadKey: "garden-full",
+          stairs: false,
+          longCarry: false,
+          specialHandling: false,
+        })
+      ).subtotalMinor,
+    ).toBe(49900);
+  });
+  it("uses owner-approved VAT treatment instead of an assumed tax status", async () => {
+    await CompanyProfile.create({
+      key: "company",
+      approved: true,
+      vatRegistered: false,
+    });
+    expect(
+      (
+        await quotePrice({
+          kind: "load",
+          postcode: "SW1A 1AA",
+          loadKey: "mini",
+          stairs: false,
+          longCarry: false,
+          specialHandling: false,
+        })
+      ).vatMinor,
+    ).toBe(0);
+  });
+  it("recovers capacity after an old TTL index removed the expired hold", async () => {
+    const { slot, hold } = await reservation();
+    await Hold.deleteOne({ _id: hold._id });
+    await releaseExpiredHolds();
+    expect((await Slot.findById(slot._id))!.reservedCount).toBe(0);
+  });
+  it("allows only one concurrent reservation of the final slot", async () => {
+    const { slot, hold } = await reservation();
+    await Hold.deleteOne({ _id: hold._id });
+    await Slot.updateOne({ _id: slot._id }, { $set: { reservedCount: 0 } });
+    const responses = await Promise.all([
+      reserveSlot(request({ slotId: String(slot._id) })),
+      reserveSlot(request({ slotId: String(slot._id) })),
+    ]);
+    expect(responses.map((row) => row.status).sort()).toEqual([201, 409]);
+    expect(await Hold.countDocuments({ status: "active" })).toBe(1);
+    expect((await Slot.findById(slot._id))!.reservedCount).toBe(1);
+  });
+  it("rejects reuse of a checkout key for a different order", async () => {
+    const { slot, hold } = await reservation();
+    const data = {
+      kind: "load",
+      postcode: "SW1A 1AA",
+      loadKey: "mini",
+      address: {
+        line1: "10 Test Street",
+        city: "London",
+        postcode: "SW1A 1AA",
+      },
+      slotId: String(slot._id),
+      holdId: String(hold._id),
+      idempotencyKey: crypto.randomUUID(),
+    };
+    expect((await createBooking(request(data))).status).toBe(201);
+    expect((await createBooking(request(data))).status).toBe(200);
+    expect(
+      (await createBooking(request({ ...data, loadKey: "xl" }))).status,
+    ).toBe(409);
+  });
+  it("expires unpaid bookings and holds late payments for staff review without overselling", async () => {
+    const { slot, hold } = await reservation();
+    await Hold.updateOne({ _id: hold._id }, { $set: { status: "consumed" } });
+    await Booking.updateOne(
+      { _id: bookingId },
+      {
+        $set: {
+          slotId: slot._id,
+          holdId: hold._id,
+          status: "pending_payment",
+          paymentStatus: "pending",
+          checkoutExpiresAt: new Date(Date.now() - 1000),
+        },
+      },
+    );
+    await Payment.create({
+      bookingId,
+      providerRef: "cs_late_test",
+      amountMinor: 12000,
+      status: "pending",
+    });
+    await releaseExpiredHolds();
+    expect((await Booking.findById(bookingId))!.status).toBe("expired");
+    expect((await Slot.findById(slot._id))!.reservedCount).toBe(0);
+    provider.event = {
+      id: "evt_late_test",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_late_test",
+          metadata: { bookingId },
+          payment_status: "paid",
+          currency: "gbp",
+          amount_total: 12000,
+          payment_intent: "pi_late_test",
+        },
+      },
+    };
+    const response = await webhook(
+      new Request("https://example.test/api/payments/webhook", {
+        method: "POST",
+        headers: { "stripe-signature": "test" },
+        body: "signed test event",
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect((await Booking.findById(bookingId))!.status).toBe("payment_review");
+    expect((await Slot.findById(slot._id))!.reservedCount).toBe(0);
+  });
+  it("makes cancellation a staff-reviewed action and releases capacity exactly once", async () => {
+    const { slot, hold } = await reservation();
+    await Hold.deleteOne({ _id: hold._id });
+    await Booking.updateOne({ _id: bookingId }, { $set: { slotId: slot._id } });
+    expect(
+      (
+        await requestChange(
+          request({ kind: "cancel", reason: "Plans changed, please review" }),
+          { params: Promise.resolve({ id: bookingId }) },
+        )
+      ).status,
+    ).toBe(201);
+    expect((await Booking.findById(bookingId))!.status).toBe("confirmed");
+    const change = await BookingChange.findOne({ bookingId });
+    await staff();
+    const body = {
+      action: "review",
+      requestId: String(change!._id),
+      approved: true,
+      note: "Cancellation reviewed and approved",
+    };
+    expect(
+      (
+        await reviewChange(request(body), {
+          params: Promise.resolve({ id: bookingId }),
+        })
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await reviewChange(request(body), {
+          params: Promise.resolve({ id: bookingId }),
+        })
+      ).status,
+    ).toBe(409);
+    expect((await Slot.findById(slot._id))!.reservedCount).toBe(0);
+    expect(await RefundRequest.countDocuments()).toBe(0);
+  });
+  it("moves a paid booking to a new slot atomically after staff approval", async () => {
+    const { zone, slot, hold } = await reservation();
+    await Hold.deleteOne({ _id: hold._id });
+    const next = await Slot.create({
+      zoneId: zone._id,
+      start: new Date(Date.now() + 86400_000),
+      end: new Date(Date.now() + 90000_000),
+      capacity: 1,
+    });
+    await Booking.updateOne({ _id: bookingId }, { $set: { slotId: slot._id } });
+    await requestChange(
+      request({
+        kind: "reschedule",
+        reason: "A later collection is needed",
+        preferredDate: new Date(Date.now() + 86400_000)
+          .toISOString()
+          .slice(0, 10),
+      }),
+      { params: Promise.resolve({ id: bookingId }) },
+    );
+    const change = await BookingChange.findOne({ bookingId });
+    await staff();
+    expect(
+      (
+        await reviewChange(
+          request({
+            action: "review",
+            requestId: String(change!._id),
+            approved: true,
+            slotId: String(next._id),
+            note: "New collection time agreed",
+          }),
+          { params: Promise.resolve({ id: bookingId }) },
+        )
+      ).status,
+    ).toBe(200);
+    expect(String((await Booking.findById(bookingId))!.slotId)).toBe(
+      String(next._id),
+    );
+    expect((await Slot.findById(slot._id))!.reservedCount).toBe(0);
+    expect((await Slot.findById(next._id))!.reservedCount).toBe(1);
+  });
+  it("prevents concurrent over-refunds and sends the approved refund once", async () => {
+    await Payment.create({
+      bookingId,
+      providerRef: "cs_refund_test",
+      providerIntentId: "pi_refund_test",
+      amountMinor: 12000,
+      status: "paid",
+    });
+    const body = {
+      action: "refund",
+      amountMinor: 10000,
+      note: "Approved partial customer refund",
+    };
+    const responses = await Promise.all([
+      reviewChange(request(body), {
+        params: Promise.resolve({ id: bookingId }),
+      }),
+      reviewChange(request(body), {
+        params: Promise.resolve({ id: bookingId }),
+      }),
+    ]);
+    expect(responses.map((row) => row.status).sort()).toEqual([200, 422]);
+    expect(await RefundRequest.countDocuments()).toBe(1);
+    process.env.STRIPE_SECRET_KEY = "isolated-test-only";
+    provider.refund.mockResolvedValue({ id: "re_test", charge: "ch_test" });
+    provider.charge.mockResolvedValue({
+      amount_refunded: 10000,
+      refunded: false,
+      refunds: { data: [{ id: "re_test", status: "succeeded" }] },
+    });
+    expect(await processRefunds()).toBe(1);
+    expect(await processRefunds()).toBe(0);
+    expect(provider.refund).toHaveBeenCalledTimes(1);
+    expect((await Booking.findById(bookingId))!.refundsMinor).toBe(10000);
+    expect((await RefundRequest.findOne())!.status).toBe("confirmed");
+  });
+  it("issues one immutable invoice for a verified payment", async () => {
+    await CompanyProfile.create({
+      key: "company",
+      legalName: "Test Company",
+      address: "10 Test Street",
+      vatNumber: "TEST-VAT",
+      approved: true,
+    });
+    const responses = await Promise.all([
+      issueInvoice(request({}), { params: Promise.resolve({ id: bookingId }) }),
+      issueInvoice(request({}), { params: Promise.resolve({ id: bookingId }) }),
+    ]);
+    expect(responses.map((row) => row.status)).toEqual([200, 200]);
+    expect(await Invoice.countDocuments()).toBe(1);
+    expect((await Invoice.findOne())!.number).toMatch(/^INV-\d{4}-000001$/);
+  });
+  it("consumes customer password reset links once and invalidates old session versions", async () => {
+    const user = await User.findOne({ role: "customer" });
+    expect((await forgotPassword(request({ email: user!.email }))).status).toBe(
+      200,
+    );
+    const email = await Notification.findOne({ event: "password_reset" });
+    const token = new URL(
+      email!.href!,
+      "https://example.test",
+    ).searchParams.get("token");
+    const data = { token, password: "ResetApprovedPassword123!" };
+    const results = await Promise.all([
+      resetPassword(request(data)),
+      resetPassword(request(data)),
+    ]);
+    expect(results.map((row) => row.status).sort()).toEqual([200, 422]);
+    const saved = await User.findById(user!._id);
+    expect(saved!.sessionVersion).toBe(1);
+    expect(await bcrypt.compare(data.password, saved!.passwordHash)).toBe(true);
+  });
+  it("lets reviewers assign company vehicle evidence without bypassing activation checks", async () => {
+    const reviewer = actor.id;
+    const app = await DriverApplication.findOne({ userId: driverId });
+    const required = ["identity", "licence", "carrier"];
+    const own = await UploadAsset.create(
+      required.map((kind) => ({
+        publicId: `driver/${kind}`,
+        ownerId: driverId,
+        purpose: "driver_document",
+      })),
+    );
+    await DriverApplication.updateOne(
+      { _id: app!._id },
+      {
+        $set: {
+          ownsVan: false,
+          status: "submitted",
+          hasFullUkLicence: true,
+          documents: own.map((asset, index) => ({
+            kind: required[index],
+            assetId: asset._id,
+          })),
+        },
+      },
+    );
+    const kinds = [
+      "insurance",
+      "mot",
+      "vehicle_front",
+      "vehicle_side",
+      "vehicle_load",
+    ];
+    const assets = await UploadAsset.create(
+      kinds.map((kind) => ({
+        publicId: `company/${kind}`,
+        ownerId: reviewer,
+        purpose: "driver_document",
+      })),
+    );
+    const expiry = new Date(Date.now() + 365 * 86400_000)
+      .toISOString()
+      .slice(0, 10);
+    const body = {
+      version: 0,
+      vehicleRegistration: "TEST123",
+      vehicleMakeModel: "Test Transit",
+      vehicleClass: "Van",
+      vanSize: "Large van",
+      maximumWeightKg: 3500,
+      capacityKg: 1000,
+      capacityM3: 16,
+      insuranceExpiresAt: expiry,
+      motExpiresAt: expiry,
+      vehicleTaxConfirmed: true,
+      note: "Company vehicle checked and assigned",
+      documents: assets.map((asset, index) => ({
+        kind: kinds[index],
+        assetId: String(asset._id),
+      })),
+    };
+    expect(
+      (
+        await companyVehicle(request(body), {
+          params: Promise.resolve({ id: String(app!._id) }),
+        })
+      ).status,
+    ).toBe(200);
+    const saved = await DriverApplication.findById(app!._id);
+    expect(saved!.documents).toHaveLength(8);
+    expect(saved!.checks?.vehicle).toBe(false);
+    expect(
+      (await UploadAsset.findById(assets[0]._id))!.ownerId?.toString(),
+    ).toBe(driverId);
+  });
+  it("onboards businesses and scopes collection reports to their organisation", async () => {
+    const response = await onboardBusiness(
+      request({
+        name: "Audit business",
+        legalName: "Audit Business Ltd",
+        managerName: "Test customer",
+        managerEmail: "customer@example.test",
+        billingEmail: "billing@example.test",
+      }),
+    );
+    expect(response.status).toBe(201);
+    const org = await Organization.findOne({ name: "Audit business" });
+    const user = await owner();
+    actor.role = "business";
+    actor.organizationId = String(org!._id);
+    await Booking.updateOne(
+      { _id: bookingId },
+      {
+        $set: {
+          organizationId: org!._id,
+          status: "verified",
+          scheduledAt: new Date(),
+        },
+      },
+    );
+    const result = await report(
+      new Request("https://example.test/api/business/reports"),
+    );
+    expect(result.status).toBe(200);
+    expect((await result.json()).summary.collections).toBe(1);
+    expect((await User.findById(user._id))!.organizationId?.toString()).toBe(
+      String(org!._id),
+    );
+  });
+  it("reconciles an unknown provider result only when it matches the approved refund", async () => {
+    await Payment.create({
+      bookingId,
+      providerRef: "cs_manual_refund",
+      providerIntentId: "pi_manual_refund",
+      amountMinor: 12000,
+      status: "paid",
+    });
+    const item = await RefundRequest.create({
+      bookingId,
+      requestedBy: actor.id,
+      amountMinor: 3000,
+      reason: "Manual reconciliation test",
+      status: "review",
+    });
+    const body = {
+      action: "reconcile_refund",
+      requestId: String(item._id),
+      providerRef: "re_manual_test",
+    };
+    provider.refundLookup.mockResolvedValue({
+      id: body.providerRef,
+      amount: 3000,
+      payment_intent: "pi_manual_refund",
+      charge: "ch_manual",
+      status: "succeeded",
+      metadata: { refundRequestId: "wrong-request" },
+    });
+    expect(
+      (
+        await reviewChange(request(body), {
+          params: Promise.resolve({ id: bookingId }),
+        })
+      ).status,
+    ).toBe(422);
+    provider.refundLookup.mockResolvedValue({
+      id: body.providerRef,
+      amount: 3000,
+      payment_intent: "pi_manual_refund",
+      charge: "ch_manual",
+      status: "succeeded",
+      metadata: { refundRequestId: String(item._id) },
+    });
+    provider.charge.mockResolvedValue({
+      amount_refunded: 3000,
+      refunded: false,
+    });
+    expect(
+      (
+        await reviewChange(request(body), {
+          params: Promise.resolve({ id: bookingId }),
+        })
+      ).status,
+    ).toBe(200);
+    expect((await RefundRequest.findById(item._id))!.status).toBe("confirmed");
+    expect((await Booking.findById(bookingId))!.refundsMinor).toBe(3000);
+    expect(provider.refund).not.toHaveBeenCalled();
+  });
+  it("keeps approved tax treatment stable while company policy drafts are edited", async () => {
+    await CompanyProfile.create({
+      key: "company",
+      approved: false,
+      vatRegistered: true,
+      vatRate: 0.2,
+      approvedTax: {
+        vatRegistered: false,
+        vatRate: 0,
+        pricesIncludeVat: false,
+      },
+    });
+    const quote = await quotePrice({
+      kind: "load",
+      postcode: "SW1A 1AA",
+      loadKey: "mini",
+      stairs: false,
+      longCarry: false,
+      specialHandling: false,
+    });
+    expect(quote.vatMinor).toBe(0);
+    expect(quote.totalMinor).toBe(5900);
+  });
 });

@@ -5,7 +5,10 @@ export const metadata = { title: "How it works" };
 export default function HowItWorks() {
   return (
     <>
-      <section className="how-it-works-hero" aria-labelledby="how-it-works-title">
+      <section
+        className="how-it-works-hero"
+        aria-labelledby="how-it-works-title"
+      >
         <Image
           className="how-it-works-background"
           src={HOW_IT_WORKS_HERO_IMAGE}
@@ -16,7 +19,9 @@ export default function HowItWorks() {
         />
         <div className="container how-it-works-content">
           <div>
-            <h1 id="how-it-works-title">From clutter to clear in three steps</h1>
+            <h1 id="how-it-works-title">
+              From clutter to clear in three steps
+            </h1>
             <p>A simple, transparent booking process.</p>
           </div>
         </div>

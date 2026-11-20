@@ -1,3 +1,4 @@
+import { rateLimit } from "@/lib/operations/rate-limit";
 import { registerSchema } from "@/lib/validation";
 import { connectDB } from "@/lib/db";
 import { User } from "@/lib/models";
@@ -9,6 +10,7 @@ export async function POST(req: Request) {
   try {
     const data = registerSchema.parse(await req.json());
     await connectDB();
+    await rateLimit(req, "customer-register", 5);
     if (await User.exists({ email: data.email }))
       return fail("This email is already registered", 409);
     const user = await User.create({

@@ -34,12 +34,31 @@ export default function Items() {
 function ItemsContent() {
   const [draft, setDraft] = useState<BookingDraft | null>(null);
   const [search, setSearch] = useState("");
+  const [catalog, setCatalog] = useState(ITEMS);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/catalog/items")
+      .then(async (response) => {
+        if (!response.ok)
+          throw new Error("Unable to load the current price book");
+        return response.json();
+      })
+      .then((data) => {
+        if (!cancelled) setCatalog(data.items);
+      })
+      .catch((error) => {
+        if (!cancelled) toast.error(error.message);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const searchParams = useSearchParams();
   const router = useRouter();
   useEffect(() => {
     setDraft({ ...loadDraft(), kind: "items" });
   }, []);
-  const categories = ["All", ...new Set(ITEMS.map((item) => item.category))];
+  const categories = ["All", ...new Set(catalog.map((item) => item.category))];
   const category =
     categories.find(
       (name) =>
@@ -56,12 +75,12 @@ function ItemsContent() {
 
   const found = useMemo(
     () =>
-      ITEMS.filter(
+      catalog.filter(
         (item) =>
           (category === "All" || item.category === category) &&
           item.title.toLowerCase().includes(search.toLowerCase()),
       ),
-    [category, search],
+    [catalog, category, search],
   );
   function modify(key: string, delta: number) {
     if (!draft) return;
@@ -89,7 +108,8 @@ function ItemsContent() {
   }
   const total = (draft?.items || []).reduce(
     (sum, row) =>
-      sum + (ITEMS.find((item) => item.key === row.key)?.price || 0) * row.qty,
+      sum +
+      (catalog.find((item) => item.key === row.key)?.price || 0) * row.qty,
     0,
   );
   const count = draft?.items?.reduce((sum, item) => sum + item.qty, 0) || 0;
@@ -198,12 +218,12 @@ function ItemsContent() {
                 <div key={row.key}>
                   <span>
                     {row.qty} ×{" "}
-                    {ITEMS.find((item) => item.key === row.key)?.title}
+                    {catalog.find((item) => item.key === row.key)?.title}
                   </span>
                   <strong>
                     {gbp(
                       row.qty *
-                        (ITEMS.find((item) => item.key === row.key)?.price ||
+                        (catalog.find((item) => item.key === row.key)?.price ||
                           0),
                     )}
                   </strong>

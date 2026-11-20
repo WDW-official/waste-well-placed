@@ -1,11 +1,6 @@
-import { getSession } from "@/lib/auth";
-import { connectDB } from "@/lib/db";
-import { Organization } from "@/lib/models";
+import { BusinessSites } from "@/components/business-sites";
 import { DashLayout } from "@/components/dash-layout";
 export default async function Sites() {
-  const u = await getSession();
-  await connectDB();
-  const org = await Organization.findOne({ managerId: u?.id }).lean();
   return (
     <DashLayout
       type="Business portal"
@@ -18,20 +13,7 @@ export default async function Sites() {
         { name: "Invoices", href: "/portal/invoices" },
       ]}
     >
-      <div className="card p-7">
-        {org?.sites?.length ? (
-          org.sites.map((s, i) => (
-            <p key={i} className="py-3 border-b">
-              <strong>{s.name}</strong> — {s.address}, {s.postcode}
-            </p>
-          ))
-        ) : (
-          <p className="muted">
-            No business sites are linked. Please contact support to activate
-            your organisation.
-          </p>
-        )}
-      </div>
+      <BusinessSites />
     </DashLayout>
   );
 }

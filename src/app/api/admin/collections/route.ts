@@ -15,6 +15,10 @@ import {
 } from "@/lib/models";
 import { ok, fail, errorResponse, ensureSameOrigin } from "@/lib/http";
 import { z } from "zod";
+import { Tariff, Review } from "@/lib/workflow-models";
+import { initialisePriceBook } from "@/lib/catalog";
+import { resourceFields } from "@/lib/admin-resource-fields";
+import { adminRecordSchemas } from "@/lib/admin-records";
 const collections: Record<string, Model<unknown>> = {
   bookings: Booking,
   quotes: Quote,
@@ -26,6 +30,8 @@ const collections: Record<string, Model<unknown>> = {
   enquiries: Enquiry,
   posts: Post,
   organizations: Organization,
+  tariffs: Tariff,
+  reviews: Review,
 } as unknown as Record<string, Model<unknown>>;
 const allowed = [
   "bookings",
@@ -38,6 +44,8 @@ const allowed = [
   "enquiries",
   "posts",
   "organizations",
+  "tariffs",
+  "reviews",
 ] as const;
 export async function GET(req: Request) {
   try {
@@ -46,6 +54,7 @@ export async function GET(req: Request) {
     const params = new URL(req.url).searchParams;
     const name = z.enum(allowed).parse(params.get("name"));
     await connectDB();
+    if (["tariffs", "catalog"].includes(name)) await initialisePriceBook();
     const page = Math.min(100, Math.max(1, Number(params.get("page") || 1)));
     const query = {};
     const rows = await collections[name]
@@ -56,7 +65,18 @@ export async function GET(req: Request) {
       .select(name === "users" ? "-passwordHash" : "")
       .lean();
     const count = await collections[name].countDocuments(query);
-    return ok({ rows, count, page });
+    return ok({
+      rows,
+      count,
+      page,
+      editableFields:
+        name === "reviews"
+          ? ["approved"]
+          : (resourceFields[name] ?? [])
+              .map((field) => field.key)
+              .filter((field) => !["key", "slug", "zoneId"].includes(field)),
+      canCreate: ["admin", "superadmin"].includes(u.role),
+    });
   } catch (e) {
     return errorResponse(e);
   }
@@ -69,13 +89,26 @@ export async function POST(req: Request) {
   try {
     const { name, record } = z
       .object({
-        name: z.enum(["zones", "slots", "services", "catalog", "posts"]),
+        name: z.enum([
+          "zones",
+          "slots",
+          "services",
+          "catalog",
+          "tariffs",
+          "posts",
+        ]),
         record: z.record(z.unknown()),
       })
       .parse(await req.json());
     await connectDB();
     const model = collections[name];
-    const created = await model.create(record);
+    const validated = adminRecordSchemas[name].parse(record);
+    if (
+      name === "slots" &&
+      !(await Zone.exists({ _id: (validated as { zoneId: string }).zoneId }))
+    )
+      return fail("Service area not found", 422);
+    const created = await model.create(validated);
     return ok({ id: String(created._id) }, 201);
   } catch (e) {
     return errorResponse(e);

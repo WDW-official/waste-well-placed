@@ -14,32 +14,35 @@ export async function POST(req: Request) {
       .parse(await req.json());
     await connectDB();
     await releaseExpiredHolds();
-    const slot = await Slot.findOneAndUpdate(
-      {
-        _id: slotId,
-        active: true,
-        start: { $gt: new Date() },
-        $expr: { $lt: ["$reservedCount", "$capacity"] },
-      },
-      { $inc: { reservedCount: 1 } },
-      { new: true },
-    );
-    if (!slot) return fail("This appointment is no longer available", 409);
-    try {
-      const hold = await Hold.create({
-        slotId,
-        userId: session.id,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000),
-        status: "active",
-      });
-      return ok({ holdId: String(hold.id), expiresAt: hold.expiresAt }, 201);
-    } catch (e) {
-      await Slot.updateOne(
-        { _id: slotId, reservedCount: { $gt: 0 } },
-        { $inc: { reservedCount: -1 } },
+    const db = await connectDB();
+    const result = await db.connection.transaction(async (transaction) => {
+      const slot = await Slot.findOneAndUpdate(
+        {
+          _id: slotId,
+          active: true,
+          start: { $gt: new Date() },
+          $expr: { $lt: ["$reservedCount", "$capacity"] },
+        },
+        { $inc: { reservedCount: 1 } },
+        { new: true, session: transaction },
       );
-      throw e;
-    }
+      if (!slot) return null;
+      const [hold] = await Hold.create(
+        [
+          {
+            slotId,
+            userId: session.id,
+            expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+            status: "active",
+          },
+        ],
+        { session: transaction },
+      );
+      return { holdId: String(hold._id), expiresAt: hold.expiresAt };
+    });
+    return result
+      ? ok(result, 201)
+      : fail("This appointment is no longer available", 409);
   } catch (e) {
     return errorResponse(e);
   }

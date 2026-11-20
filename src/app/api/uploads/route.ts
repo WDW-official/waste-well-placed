@@ -2,7 +2,7 @@ import { rateLimit } from "@/lib/operations/rate-limit";
 import { randomUUID } from "node:crypto";
 import type { UploadApiResponse } from "cloudinary";
 import { getSession } from "@/lib/auth";
-import { configureCloudinary } from "@/lib/cloudinary";
+import { cloudinaryUploadError, configureCloudinary } from "@/lib/cloudinary";
 import { connectDB } from "@/lib/db";
 import { UploadAsset } from "@/lib/operations/models";
 import { guestIdentity } from "@/lib/operations/assets";
@@ -29,7 +29,11 @@ export async function POST(req: Request) {
     );
     const user = await getSession();
     if (purpose === "driver_document")
-      requireCondition(user?.role === "driver", "Driver account required", 403);
+      requireCondition(
+        user && (user.role === "driver" || permitted(user.role, "drivers")),
+        "Driver or driver-reviewer account required",
+        403,
+      );
     if (purpose === "evidence")
       requireCondition(
         user &&
@@ -93,7 +97,7 @@ export async function POST(req: Request) {
         },
         (error, result) =>
           error || !result
-            ? reject(error ?? Error("Upload failed"))
+            ? reject(cloudinaryUploadError(error ?? Error("Upload failed")))
             : resolve(result),
       );
       stream.end(bytes);

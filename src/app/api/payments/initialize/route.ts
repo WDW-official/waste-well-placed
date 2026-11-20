@@ -15,6 +15,19 @@ export async function POST(req: Request) {
     await connectDB();
     const booking = await Booking.findOne({ _id: bookingId, userId: user.id });
     if (!booking) return fail("Booking not found", 404);
+    if (booking.status !== "pending_payment" || booking.slotReleasedAt)
+      return fail(
+        "This booking is no longer payable. Please choose a new slot.",
+        409,
+      );
+    const expiresAt =
+      booking.checkoutExpiresAt ??
+      new Date(booking.createdAt.getTime() + 3600_000);
+    if (expiresAt.getTime() < Date.now() + 30 * 60_000)
+      return fail(
+        "The payment window is closing. Reserve a new slot to restart checkout.",
+        409,
+      );
     if (booking.paymentStatus === "paid")
       return fail("Booking has been paid", 409);
     if (!booking.price?.totalMinor || booking.price.totalMinor < 50)
@@ -26,6 +39,7 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
+        expires_at: Math.floor(expiresAt.getTime() / 1000),
         customer_email: user.email,
         payment_method_types: ["card"],
         line_items: [

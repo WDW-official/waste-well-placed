@@ -63,6 +63,12 @@ export function clearDraft() {
   if (typeof window !== "undefined") {
     localStorage.removeItem(KEY);
     sessionStorage.removeItem("wwp_booking_start");
+    for (const key of [
+      "wwp_checkout_key",
+      "wwp_checkout_hold",
+      "wwp_pending_booking",
+    ])
+      sessionStorage.removeItem(key);
     window.dispatchEvent(new Event("wwp-draft-change"));
   }
 }

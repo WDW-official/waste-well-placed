@@ -1,3 +1,4 @@
+import { ProfileForm } from "@/components/profile-form";
 import { getSession } from "@/lib/auth";
 import { DashLayout } from "@/components/dash-layout";
 import { LogoutButton } from "@/components/logout-button";
@@ -24,6 +25,7 @@ export default async function Profile() {
         <p className="mt-3">
           <strong>Account type:</strong> {u?.role}
         </p>
+        <ProfileForm name={u?.name ?? ""} phone={u?.phone ?? ""} />
         <div className="mt-6">
           <LogoutButton />
         </div>

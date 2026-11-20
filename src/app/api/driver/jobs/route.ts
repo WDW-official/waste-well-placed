@@ -16,6 +16,11 @@ export async function GET() {
   try {
     const user = await requireUser();
     requireCondition(user.role === "driver", "Driver account required", 403);
+    requireCondition(
+      !user.driverPasswordPending,
+      "Set your password using the approval email before accessing driver work.",
+      403,
+    );
     await connectDB();
     const profile = await DriverApplication.findOne({ userId: user.id })
       .select("-draft")

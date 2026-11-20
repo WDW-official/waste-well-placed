@@ -1,13 +1,14 @@
 import { bookingSchema } from "@/lib/validation";
 import { getSession } from "@/lib/auth";
 import { findZone } from "@/lib/coverage";
-import { priceEstimate } from "@/lib/pricing";
+import { quotePrice } from "@/lib/catalog";
 import { connectDB } from "@/lib/db";
 import { Booking, Hold, Slot, Audit } from "@/lib/models";
 import { attachPhotos } from "@/lib/operations/assets";
 import { notifyStaff } from "@/lib/operations/events";
 import { getLoad } from "@/lib/constants";
 import { requireCondition } from "@/lib/operations/security";
+import { hashToken } from "@/lib/operations/security";
 import { newRef } from "@/lib/utils";
 import { ok, errorResponse, fail, ensureSameOrigin } from "@/lib/http";
 export async function GET() {
@@ -35,10 +36,37 @@ export async function POST(req: Request) {
     )
       return fail("Postcode mismatch", 422);
     await connectDB();
+    const requestHash = hashToken(
+      JSON.stringify({
+        kind: data.kind,
+        postcode: data.postcode,
+        load: data.kind === "load" ? data.loadKey : null,
+        items:
+          data.kind === "items"
+            ? [...data.items].sort((a, b) => a.key.localeCompare(b.key))
+            : null,
+        address: data.address,
+        slotId: data.slotId,
+        holdId: data.holdId,
+        stairs: data.stairs,
+        longCarry: data.longCarry,
+        specialHandling: data.specialHandling,
+      }),
+    );
     const prior = await Booking.findOne({
       idempotencyKey: data.idempotencyKey,
       userId: user.id,
     });
+    if (prior && prior.requestHash && prior.requestHash !== requestHash)
+      return fail(
+        "This checkout belongs to another booking. Reserve a new slot to continue.",
+        409,
+      );
+    if (prior && ["expired", "cancelled"].includes(prior.status))
+      return fail(
+        "This booking expired or was cancelled. Choose a new slot.",
+        409,
+      );
     if (prior)
       return ok({
         bookingId: String(prior._id),
@@ -68,7 +96,7 @@ export async function POST(req: Request) {
       active: true,
     });
     if (!slot) return fail("Slot is no longer available", 409);
-    const estimate = priceEstimate(data, zone.surchargeMinor);
+    const estimate = await quotePrice(data, zone.surchargeMinor);
     const load = data.kind === "load" ? getLoad(data.loadKey) : undefined;
     const db = await connectDB();
     const booked = await db.connection.transaction(async (session) => {
@@ -87,6 +115,9 @@ export async function POST(req: Request) {
           {
             reference: newRef(),
             userId: user.id,
+            organizationId: user.organizationId || undefined,
+            requestHash,
+            checkoutExpiresAt: new Date(Date.now() + 3600_000),
             kind: data.kind,
             source: data.kind,
             wasteType: load?.wasteType ?? "mixed",

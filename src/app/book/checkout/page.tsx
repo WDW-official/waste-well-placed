@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { BookingShell } from "@/components/booking-shell";
 import { loadDraft, request, type BookingDraft } from "@/lib/booking-client";
+import { getLoad } from "@/lib/constants";
 import { gbp } from "@/lib/utils";
 import { toast } from "sonner";
 export default function Checkout() {
@@ -11,9 +12,14 @@ export default function Checkout() {
     [accepted, setAccepted] = useState(false);
   const idempotency = useRef<string>("");
   useEffect(() => {
-    setD(loadDraft());
+    const draft = loadDraft();
+    setD(draft);
+    const sameHold =
+      sessionStorage.getItem("wwp_checkout_hold") === draft.holdId;
     idempotency.current =
-      sessionStorage.getItem("wwp_checkout_key") || crypto.randomUUID();
+      (sameHold ? sessionStorage.getItem("wwp_checkout_key") : null) ||
+      crypto.randomUUID();
+    sessionStorage.setItem("wwp_checkout_hold", draft.holdId || "");
     sessionStorage.setItem("wwp_checkout_key", idempotency.current);
   }, []);
   if (!d) return <div className="container section">Loading…</div>;
@@ -42,6 +48,7 @@ export default function Checkout() {
         "/api/bookings",
         body,
       );
+      sessionStorage.setItem("wwp_pending_booking", booking.bookingId);
       const payment = await request<{ url: string }>(
         "/api/payments/initialize",
         { bookingId: booking.bookingId },
@@ -73,7 +80,11 @@ export default function Checkout() {
           <dl className="mt-4 space-y-4">
             <div>
               <dt className="font-bold">Collection type</dt>
-              <dd>{d.kind === "load" ? "Mixed waste" : "Selected items"}</dd>
+              <dd>
+                {d.kind === "load"
+                  ? (getLoad(d.loadKey)?.title ?? "Waste collection")
+                  : "Selected items"}
+              </dd>
             </div>
             <div>
               <dt className="font-bold">Address</dt>
