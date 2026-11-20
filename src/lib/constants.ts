@@ -128,20 +128,39 @@ export const LOADS = [
     base: 31900,
   },
 ];
-// Specialist loads reuse the existing small/medium/XL guide tariffs and weight
-// limits. Their volume is a quarter, half or all of the 16-yard full load.
+// Specialist loads have separate guide prices and reuse the small/medium/XL
+// weight limits. Their volume is a quarter, half or all of the 16-yard full load.
 export const SPECIALIST_LOADS = ["construction", "garden"].flatMap(
   (wasteType) =>
     [
-      { size: "quarter", title: "Quarter load", volume: 4, tariff: LOADS[1] },
-      { size: "half", title: "Half load", volume: 8, tariff: LOADS[2] },
-      { size: "full", title: "Full load", volume: 16, tariff: LOADS[4] },
-    ].map(({ size, title, volume, tariff }) => ({
+      {
+        size: "quarter",
+        title: "Quarter load",
+        volume: 4,
+        base: 14900,
+        tariff: LOADS[1],
+      },
+      {
+        size: "half",
+        title: "Half load",
+        volume: 8,
+        base: 26900,
+        tariff: LOADS[2],
+      },
+      {
+        size: "full",
+        title: "Full load",
+        volume: 16,
+        base: 44900,
+        tariff: LOADS[4],
+      },
+    ].map(({ size, title, volume, base, tariff }) => ({
       ...tariff,
       key: `${wasteType}-${size}`,
       title: `${wasteType === "construction" ? "Construction" : "Garden"} waste — ${title.toLowerCase()}`,
       sizeTitle: title,
       volume,
+      base,
       wasteType,
       service: `${wasteType}-waste`,
     })),

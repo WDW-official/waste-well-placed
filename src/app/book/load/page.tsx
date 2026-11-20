@@ -285,7 +285,7 @@ function LoadSelector() {
                           )}
                         </small>
                       </span>
-                      <LoadIllustration fraction={load.weight / 1400} heavy />
+                      <LoadIllustration fraction={load.volume / 16} heavy />
                     </div>
                   </div>
                 )}

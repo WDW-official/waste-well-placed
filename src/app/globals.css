@@ -1840,15 +1840,19 @@ body:has(.booking-page) > .footer {
 }
 .specialist-load-image {
   overflow: hidden;
-  margin: 0 0 20px;
+  margin: 0;
   border-radius: 15px;
   background: #fff;
 }
 .specialist-load-image img {
   display: block;
   width: 100%;
-  height: clamp(200px, 30vw, 380px);
+  height: auto;
   object-fit: contain;
+  object-position: center top;
+}
+.specialist-load-image ~ .load-price {
+  margin-top: 0;
 }
 .load-diagram > div {
   display: flex;

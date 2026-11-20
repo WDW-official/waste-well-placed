@@ -29,12 +29,12 @@ describe("GBP pricing", () => {
     expect(q.subtotalMinor).toBe(3800);
   });
   it.each([
-    ["construction-quarter", 9900, "Construction waste — quarter load"],
-    ["construction-half", 15900, "Construction waste — half load"],
-    ["construction-full", 31900, "Construction waste — full load"],
-    ["garden-quarter", 9900, "Garden waste — quarter load"],
-    ["garden-half", 15900, "Garden waste — half load"],
-    ["garden-full", 31900, "Garden waste — full load"],
+    ["construction-quarter", 14900, "Construction waste — quarter load"],
+    ["construction-half", 26900, "Construction waste — half load"],
+    ["construction-full", 44900, "Construction waste — full load"],
+    ["garden-quarter", 14900, "Garden waste — quarter load"],
+    ["garden-half", 26900, "Garden waste — half load"],
+    ["garden-full", 44900, "Garden waste — full load"],
   ])("prices %s using the approved guide tariff", (loadKey, price, title) => {
     const quote = priceEstimate({
       kind: "load",

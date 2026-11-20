@@ -631,8 +631,8 @@ describe("Stripe event idempotency", () => {
 
 describe("specialist load checkout", () => {
   it.each([
-    ["construction-half", "construction", 15900, 350, 6.116],
-    ["garden-full", "garden", 31900, 900, 12.233],
+    ["construction-half", "construction", 26900, 350, 6.116],
+    ["garden-full", "garden", 44900, 900, 12.233],
   ])(
     "preserves %s classification and server pricing",
     async (loadKey, wasteType, subtotal, weight, volume) => {
