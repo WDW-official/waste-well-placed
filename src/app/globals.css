@@ -5320,14 +5320,6 @@ body:has(#main-content form):not(:has(#main-content .home-hero)) > .footer {
   color: var(--workspace-ink);
   padding-bottom: 48px;
 }
-.platform-shell[data-theme="dark"] {
-  --workspace-bg: #101e19;
-  --workspace-card: #1a3027;
-  --workspace-ink: #eaf7ef;
-  --workspace-muted: #acc4b6;
-  --workspace-line: #365245;
-  color-scheme: dark;
-}
 .platform-header {
   display: flex;
   align-items: center;
@@ -5350,15 +5342,6 @@ body:has(#main-content form):not(:has(#main-content .home-hero)) > .footer {
   object-fit: cover;
   background: white;
   border-radius: 6px;
-}
-.platform-theme {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: var(--workspace-bg);
-  color: var(--workspace-ink);
 }
 .platform-container {
   width: min(1180px, calc(100% - 40px));
@@ -6067,11 +6050,6 @@ body:has(#main-content form):not(:has(#main-content .home-hero)) > .footer {
   border-top: 4px solid #7bbd32;
   border-radius: 22px;
   box-shadow: 0 10px 32px rgb(18 59 48 / 7%);
-}
-.platform-shell[data-theme="dark"] .driver-start-card {
-  --application-accent: #b5e68e;
-  --application-soft: #233d2d;
-  --application-border: #6e9954;
 }
 .driver-start-card > h2 {
   margin-bottom: 0;

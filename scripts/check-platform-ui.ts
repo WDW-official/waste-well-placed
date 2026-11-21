@@ -198,52 +198,44 @@ async function main() {
         });
         await page.waitForTimeout(500);
         const safeName = scenario.path.replace(/[^a-z0-9]/gi, "_");
-        for (const theme of ["light", "dark"]) {
-          if (
-            theme === "dark" &&
-            (await page.getByRole("button", { name: "Use dark theme" }).count())
-          )
-            await page.getByRole("button", { name: "Use dark theme" }).click();
-          await page.waitForTimeout(300);
-          const overflow = await page.evaluate(() => ({
-            viewport: innerWidth,
-            body: document.documentElement.scrollWidth,
-          }));
-          if (overflow.body > overflow.viewport + 1) {
-            const outside = await page.evaluate(() =>
-              Array.from(document.querySelectorAll("body *"))
-                .filter(
-                  (element) =>
-                    element.getBoundingClientRect().right > innerWidth + 1,
-                )
-                .slice(-12)
-                .map((element) => ({
-                  tag: element.tagName,
-                  class: element.className,
-                  right: element.getBoundingClientRect().right,
-                  text: element.textContent?.slice(0, 70),
-                })),
-            );
-            console.log(JSON.stringify(outside));
-            throw Error(
-              `Horizontal overflow at ${scenario.path}, ${width}px, ${theme}: ${overflow.body}`,
-            );
-          }
-          if (errors.length)
-            throw Error(
-              `Browser errors at ${scenario.path}: ${errors.join("; ")}`,
-            );
-          await page.screenshot({
-            path: resolve(output, `${width}-${safeName}-${theme}.png`),
-            fullPage: true,
-          });
-          checks++;
+        const overflow = await page.evaluate(() => ({
+          viewport: innerWidth,
+          body: document.documentElement.scrollWidth,
+        }));
+        if (overflow.body > overflow.viewport + 1) {
+          const outside = await page.evaluate(() =>
+            Array.from(document.querySelectorAll("body *"))
+              .filter(
+                (element) =>
+                  element.getBoundingClientRect().right > innerWidth + 1,
+              )
+              .slice(-12)
+              .map((element) => ({
+                tag: element.tagName,
+                class: element.className,
+                right: element.getBoundingClientRect().right,
+                text: element.textContent?.slice(0, 70),
+              })),
+          );
+          console.log(JSON.stringify(outside));
+          throw Error(
+            `Horizontal overflow at ${scenario.path}, ${width}px: ${overflow.body}`,
+          );
         }
+        if (errors.length)
+          throw Error(
+            `Browser errors at ${scenario.path}: ${errors.join("; ")}`,
+          );
+        await page.screenshot({
+          path: resolve(output, `${width}-${safeName}.png`),
+          fullPage: true,
+        });
+        checks++;
         await context.close();
       }
     }
     console.log(
-      `Browser checks passed: ${checks} page/viewport/theme combinations. Screenshots: ${output}`,
+      `Browser checks passed: ${checks} page/viewport combinations. Screenshots: ${output}`,
     );
   } finally {
     await browser?.close();
