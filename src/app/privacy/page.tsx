@@ -1,12 +1,15 @@
 import { PublishedPolicy } from "@/components/published-policy";
-import { PageTitle } from "@/components/page-title";
+import { PolicyPage } from "@/components/policy-page";
 export default function Privacy() {
   return (
-    <>
-      <PageTitle title="Privacy policy" />
+    <PolicyPage
+      title="Privacy policy"
+      description="How we handle your personal information when you use Waste Well Placed."
+      kind="privacy"
+    >
       <PublishedPolicy kind="privacyText">
         <article className="article section px-6">
-          <p>
+          <p className="policy-review-note">
             <strong>
               Pre-launch legal template — requires review and completion before
               publishing.
@@ -50,6 +53,6 @@ export default function Privacy() {
           </p>
         </article>
       </PublishedPolicy>
-    </>
+    </PolicyPage>
   );
 }

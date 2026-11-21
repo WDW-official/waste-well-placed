@@ -1583,6 +1583,7 @@ svg {
 }
 /* Booking pages */
 body:has(.booking-page) > .footer,
+body:has(.policy-page) > .footer,
 body:has(#main-content form):not(:has(#main-content .home-hero)) > .footer {
   display: none;
 }
@@ -5948,4 +5949,223 @@ body:has(#main-content form):not(:has(#main-content .home-hero)) > .footer {
 }
 .load-main > .carousel-controls {
   display: flex;
+}
+
+.policy-page {
+  background: #f7faf7;
+  padding-bottom: 48px;
+}
+.policy-heading {
+  padding: 40px 24px 52px;
+  background: #eef7e8;
+  border-bottom: 1px solid #ddebd5;
+}
+.policy-heading-inner {
+  max-width: 760px;
+  margin-inline: auto;
+}
+.policy-symbol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 18px;
+  border: 1px solid #cfdfc4;
+  border-radius: 14px;
+  background: #fff;
+  color: #006747;
+}
+.policy-heading h1 {
+  margin: 10px 0 12px;
+  font-size: clamp(30px, 5vw, 44px);
+  font-weight: 750;
+  line-height: 1.15;
+  letter-spacing: -0.035em;
+  color: var(--forest);
+}
+.policy-heading p {
+  max-width: 560px;
+  font-size: 16px;
+  line-height: 1.65;
+  color: #52675e;
+}
+.policy-content {
+  max-width: 808px;
+  margin: -20px auto 0;
+  padding-inline: 24px;
+  position: relative;
+}
+.policy-content .article {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 32px;
+  border: 1px solid #dfe8df;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 6px 24px rgb(18 59 48 / 4%);
+  font-size: 16px;
+  line-height: 1.85;
+  color: #42564c;
+  overflow-wrap: anywhere;
+}
+.policy-content .article h2 {
+  margin: 28px 0 12px;
+  padding-left: 12px;
+  border-left: 3px solid #7bbd32;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  color: var(--forest);
+}
+.policy-content .article p {
+  margin: 0 0 16px;
+}
+.policy-content .article p:last-child {
+  margin-bottom: 0;
+}
+.policy-content .policy-review-note {
+  padding: 14px 16px;
+  border: 1px solid #eee0b5;
+  border-radius: 12px;
+  background: #fff9e9;
+  color: #705b26;
+  font-size: 13px;
+  line-height: 1.6;
+}
+@media (max-width: 640px) {
+  .policy-heading {
+    padding: 28px 20px 40px;
+  }
+  .policy-content {
+    padding-inline: 14px;
+    margin-top: -16px;
+  }
+  .policy-content .article {
+    padding: 22px 18px;
+    border-radius: 16px;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .policy-content .article h2 {
+    font-size: 19px;
+    margin-top: 26px;
+  }
+  .policy-page {
+    padding-bottom: 28px;
+  }
+}
+
+.driver-start-card {
+  --application-accent: #006747;
+  --application-soft: #eef8e7;
+  --application-border: #9fc784;
+  width: 100%;
+  padding: clamp(16px, 3vw, 24px);
+  border-top: 4px solid #7bbd32;
+  border-radius: 22px;
+  box-shadow: 0 10px 32px rgb(18 59 48 / 7%);
+}
+.platform-shell[data-theme="dark"] .driver-start-card {
+  --application-accent: #b5e68e;
+  --application-soft: #233d2d;
+  --application-border: #6e9954;
+}
+.driver-start-card > h2 {
+  margin-bottom: 0;
+  font-size: 26px;
+}
+.driver-start-card > p {
+  margin-block: 0;
+  color: var(--workspace-muted);
+}
+.driver-start-card fieldset {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--workspace-line);
+  border-radius: 14px;
+}
+.driver-start-card legend {
+  padding-inline: 5px;
+}
+.driver-start-card .platform-checkbox {
+  align-items: center;
+  min-width: 92px;
+  min-height: 46px;
+  padding: 10px 16px;
+  border: 1px solid var(--application-border);
+  border-radius: 10px;
+  background: var(--application-soft);
+  color: var(--application-accent);
+  cursor: pointer;
+  transition:
+    background-color 150ms,
+    border-color 150ms;
+}
+.driver-start-card .platform-checkbox input {
+  margin-top: 0;
+  accent-color: #006747;
+}
+.driver-start-card .platform-checkbox:hover {
+  border-color: var(--application-accent);
+}
+.driver-start-card .platform-checkbox:has(input:checked) {
+  background: #006747;
+  border-color: #006747;
+  color: white;
+}
+.driver-start-card .platform-checkbox:has(input:checked) input {
+  accent-color: #a8dd70;
+}
+.driver-start-card .input {
+  min-height: 50px;
+  border-color: var(--application-border);
+  border-radius: 10px;
+  background: var(--application-soft);
+  color: var(--workspace-ink);
+}
+.driver-start-card .input:hover {
+  border-color: var(--application-accent);
+}
+.driver-start-card .custom-select-trigger {
+  color: var(--application-accent);
+  cursor: pointer;
+}
+.driver-start-card a {
+  color: var(--application-accent);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+.driver-start-card a:hover {
+  text-decoration-thickness: 2px;
+}
+.driver-start-card > .btn-primary {
+  min-height: 50px;
+  border: 1px solid #006747;
+  border-radius: 12px;
+  background: #006747;
+  color: white;
+  cursor: pointer;
+}
+.driver-start-card > .btn-primary:hover:not(:disabled) {
+  background: #004d35;
+}
+.driver-start-card > .btn-primary:disabled {
+  opacity: 1;
+  background: var(--workspace-line);
+  border-color: var(--workspace-line);
+  color: var(--workspace-muted);
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .driver-start-card > .driver-start-signin,
+  .driver-start-card > .driver-start-privacy {
+    font-size: 12px;
+    line-height: 1.6;
+  }
 }

@@ -16,7 +16,7 @@ export function DriverAccess({ register = false }: { register?: boolean }) {
   return (
     <div className="platform-stack">
       <form
-        className="platform-card platform-form max-w-lg"
+        className={`platform-card platform-form max-w-lg${register ? " driver-start-card" : ""}`}
         onSubmit={async (event) => {
           event.preventDefault();
           if (busy || (register && (licence !== "yes" || !ownsVan))) return;
@@ -233,7 +233,7 @@ export function DriverAccess({ register = false }: { register?: boolean }) {
             </button>
           </>
         )}
-        <p>
+        <p className={register ? "driver-start-signin" : undefined}>
           {register ? "Already applied?" : "New to the team?"}{" "}
           <Link
             className="underline"
@@ -243,7 +243,7 @@ export function DriverAccess({ register = false }: { register?: boolean }) {
           </Link>
         </p>
         {register && (
-          <Link className="underline" href="/privacy">
+          <Link className="underline driver-start-privacy" href="/privacy">
             How we use your application details
           </Link>
         )}

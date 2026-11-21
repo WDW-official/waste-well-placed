@@ -1,12 +1,15 @@
 import { PublishedPolicy } from "@/components/published-policy";
-import { PageTitle } from "@/components/page-title";
+import { PolicyPage } from "@/components/policy-page";
 export default function Terms() {
   return (
-    <>
-      <PageTitle title="Terms & conditions" />
+    <PolicyPage
+      title="Terms & conditions"
+      description="Information about booking, payment and using our collection services."
+      kind="terms"
+    >
       <PublishedPolicy kind="termsText">
         <article className="article section px-6">
-          <p>
+          <p className="policy-review-note">
             <strong>Pre-launch terms draft — legal review required.</strong>
           </p>
           <h2>Bookings & payment</h2>
@@ -28,6 +31,6 @@ export default function Terms() {
           </p>
         </article>
       </PublishedPolicy>
-    </>
+    </PolicyPage>
   );
 }
