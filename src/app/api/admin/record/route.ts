@@ -16,6 +16,7 @@ import { z } from "zod";
 import mongoose from "mongoose";
 import { Tariff, Review } from "@/lib/workflow-models";
 import { adminRecordSchemas } from "@/lib/admin-records";
+import { adminEditableFields } from "@/lib/admin-resource-fields";
 const models: Record<string, Model<unknown>> = {
   bookings: Booking,
   quotes: Quote,
@@ -42,31 +43,6 @@ const changes = z.object({
   id: z.string(),
   patch: z.record(z.unknown()),
 });
-const ALLOWED: { [key: string]: string[] } = {
-  bookings: ["notes"],
-  quotes: [],
-  zones: [
-    "name",
-    "prefixes",
-    "active",
-    "surchargeMinor",
-    "allowedDays",
-    "capacity",
-  ],
-  slots: ["start", "end", "active", "capacity"],
-  services: [
-    "title",
-    "description",
-    "image",
-    "active",
-    "sortOrder",
-    "basePriceMinor",
-  ],
-  catalog: ["title", "category", "priceMinor", "active"],
-  tariffs: ["title", "priceMinor", "active"],
-  reviews: ["approved"],
-  posts: ["title", "excerpt", "body", "image", "published"],
-};
 export async function PATCH(req: Request) {
   if (!ensureSameOrigin(req)) return fail("Invalid origin", 403);
   const user = await getSession();
@@ -88,7 +64,10 @@ export async function PATCH(req: Request) {
     )
       return fail("Forbidden", 403);
     const fields = Object.keys(patch);
-    if (!fields.length || fields.some((k) => !ALLOWED[name].includes(k)))
+    if (
+      !fields.length ||
+      fields.some((k) => !adminEditableFields[name].includes(k))
+    )
       return fail("Invalid update fields", 422);
     await connectDB();
     const existing = await models[name].findById(id).lean();
@@ -118,6 +97,7 @@ export async function PATCH(req: Request) {
         "reservedCount",
       ])
         delete value[field];
+      if (name === "slots") value.zoneId = String(value.zoneId);
       schema.parse(value);
     }
     const validatedPatch =

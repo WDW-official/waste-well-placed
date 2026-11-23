@@ -1,4 +1,5 @@
 "use client";
+import { AdminSkeleton } from "./admin-skeleton";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/operations/client";
 import { Select } from "./select";
@@ -25,7 +26,11 @@ export function CompanySettings() {
       .catch((error) => setMessage(error.message));
   }, []);
   if (!data)
-    return <p role="status">{message || "Loading company settings…"}</p>;
+    return message ? (
+      <p role="alert">{message}</p>
+    ) : (
+      <AdminSkeleton variant="form" label="Loading company settings" />
+    );
   return (
     <div className="platform-stack">
       <section className="platform-card">

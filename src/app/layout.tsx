@@ -3,9 +3,8 @@ import { Suspense } from "react";
 import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { SiteMotion } from "@/components/site-motion";
+import { SiteFrame } from "@/components/site-frame";
 import { ScrollToTop } from "@/components/scroll-to-top";
-import { FloatingActions } from "@/components/basket";
 import { Toaster } from "sonner";
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -30,11 +29,9 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <ScrollToTop />
         </Suspense>
-        <Header />
-        <main id="main-content">{children}</main>
-        <Footer />
-        <SiteMotion />
-        <FloatingActions />
+        <SiteFrame header={<Header />} footer={<Footer />}>
+          {children}
+        </SiteFrame>
         <Toaster richColors position="top-right" />
       </body>
     </html>

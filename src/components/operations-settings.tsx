@@ -1,8 +1,10 @@
 "use client";
+import { AdminSkeleton } from "./admin-skeleton";
 import { useEffect, useState } from "react";
 import { api, moneyInput } from "@/lib/operations/client";
 import { Select } from "@/components/select";
 export function OperationsSettings() {
+  const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState("fixed");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -10,8 +12,11 @@ export function OperationsSettings() {
   useEffect(() => {
     void api<{ rows: { version: number }[] }>("/api/operations?view=policy")
       .then((data) => setVersion(data.rows[0]?.version ?? null))
-      .catch((failure) => setMessage(failure.message));
+      .catch((failure) => setMessage(failure.message))
+      .finally(() => setLoading(false));
   }, []);
+  if (loading)
+    return <AdminSkeleton variant="form" label="Loading operational policy" />;
   return (
     <form
       className="platform-card platform-form"

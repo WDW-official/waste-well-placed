@@ -1,4 +1,5 @@
 "use client";
+import { AdminSkeleton } from "./admin-skeleton";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/operations/client";
 import { gbp } from "@/lib/utils";
@@ -56,7 +57,12 @@ export function BookingManagement({ id }: { id: string }) {
       setBusy(false);
     }
   }
-  if (!data) return <p role="status">{error || "Loading booking changes…"}</p>;
+  if (!data)
+    return error ? (
+      <p role="alert">{error}</p>
+    ) : (
+      <AdminSkeleton variant="form" label="Loading booking changes" />
+    );
   return (
     <section className="platform-card mt-6">
       <h2>Booking changes & refunds</h2>

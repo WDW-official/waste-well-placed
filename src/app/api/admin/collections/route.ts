@@ -17,7 +17,7 @@ import { ok, fail, errorResponse, ensureSameOrigin } from "@/lib/http";
 import { z } from "zod";
 import { Tariff, Review } from "@/lib/workflow-models";
 import { initialisePriceBook } from "@/lib/catalog";
-import { resourceFields } from "@/lib/admin-resource-fields";
+import { adminEditableFields } from "@/lib/admin-resource-fields";
 import { adminRecordSchemas } from "@/lib/admin-records";
 const collections: Record<string, Model<unknown>> = {
   bookings: Booking,
@@ -62,7 +62,9 @@ export async function GET(req: Request) {
       .sort({ createdAt: -1 })
       .skip((page - 1) * 20)
       .limit(20)
-      .select(name === "users" ? "-passwordHash" : "")
+      .select(
+        name === "users" ? "name email phone role createdAt updatedAt" : "",
+      )
       .lean();
     const count = await collections[name].countDocuments(query);
     return ok({
@@ -70,11 +72,9 @@ export async function GET(req: Request) {
       count,
       page,
       editableFields:
-        name === "reviews"
-          ? ["approved"]
-          : (resourceFields[name] ?? [])
-              .map((field) => field.key)
-              .filter((field) => !["key", "slug", "zoneId"].includes(field)),
+        name === "bookings" || ["admin", "superadmin"].includes(u.role)
+          ? (adminEditableFields[name] ?? [])
+          : [],
       canCreate: ["admin", "superadmin"].includes(u.role),
     });
   } catch (e) {

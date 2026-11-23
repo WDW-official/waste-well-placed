@@ -1,4 +1,5 @@
 "use client";
+import { AdminSkeleton } from "./admin-skeleton";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/operations/client";
 export function BusinessManager() {
@@ -13,17 +14,25 @@ export function BusinessManager() {
     >([]),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
   const load = useCallback(async () => {
-    const result = await api<{
-      organizations: typeof rows;
-      canCreate: boolean;
-    }>("/api/operations/organizations");
-    setRows(result.organizations);
-    setCanCreate(result.canCreate);
+    setLoading(true);
+    try {
+      const result = await api<{
+        organizations: typeof rows;
+        canCreate: boolean;
+      }>("/api/operations/organizations");
+      setRows(result.organizations);
+      setCanCreate(result.canCreate);
+    } finally {
+      setLoading(false);
+    }
   }, []);
   useEffect(() => {
     void load().catch((error) => setMessage(error.message));
   }, [load]);
+  if (loading)
+    return <AdminSkeleton variant="cards" label="Loading organisations" />;
   return (
     <div className="platform-stack">
       {canCreate && (

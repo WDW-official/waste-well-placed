@@ -1,9 +1,9 @@
 import { requireUser } from "@/lib/operations/security";
-import { DashLayout } from "@/components/dash-layout";
-import { adminLinks } from "@/lib/admin-links";
+import { AdminPage } from "@/components/admin-page";
 import { connectDB } from "@/lib/db";
 import { Booking } from "@/lib/models";
 import { gbp } from "@/lib/utils";
+import Link from "next/link";
 export default async function Reports() {
   await requireUser("finance");
   await connectDB();
@@ -19,7 +19,7 @@ export default async function Reports() {
     { $sort: { count: -1 } },
   ]);
   return (
-    <DashLayout type="Operations" title="Booking reports" links={adminLinks}>
+    <AdminPage title="Booking reports">
       <div className="table-wrap">
         <table className="data-table">
           <thead>
@@ -27,6 +27,7 @@ export default async function Reports() {
               <th>Job status</th>
               <th>Paid bookings</th>
               <th>Value</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -35,16 +36,24 @@ export default async function Reports() {
                 <td>{r._id}</td>
                 <td>{r.count}</td>
                 <td>{gbp(r.amount)}</td>
+                <td>
+                  <Link
+                    className="text-sm font-semibold underline"
+                    href={`/admin/jobs?status=${encodeURIComponent(String(r._id))}`}
+                  >
+                    View collections
+                  </Link>
+                </td>
               </tr>
             ))}
             {!result.length && (
               <tr>
-                <td colSpan={3}>No verified payments yet</td>
+                <td colSpan={4}>No verified payments yet</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
-    </DashLayout>
+    </AdminPage>
   );
 }

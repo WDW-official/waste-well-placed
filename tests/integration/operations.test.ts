@@ -35,6 +35,8 @@ const createdSession = vi.hoisted(() => vi.fn());
 vi.mock("@/lib/auth", () => ({
   getSession: vi.fn(async () => actor),
   createSession: createdSession,
+  isStaff: (role: string) =>
+    ["admin", "superadmin", "dispatcher"].includes(role),
 }));
 vi.mock("next/headers", () => ({
   cookies: vi.fn(async () => ({ get: () => undefined })),
@@ -107,6 +109,8 @@ import { POST as companyVehicle } from "@/app/api/admin/drivers/[id]/vehicle/rou
 import { processRefunds } from "@/lib/refunds";
 import { GET as report } from "@/app/api/business/reports/route";
 import { POST as onboardBusiness } from "@/app/api/operations/organizations/route";
+import { PATCH as editAdminRecord } from "@/app/api/admin/record/route";
+import { GET as adminCollections } from "@/app/api/admin/collections/route";
 let replica: MongoMemoryReplSet;
 let driverId: string;
 let bookingId: string;
@@ -270,6 +274,128 @@ function request(body: unknown) {
     body: JSON.stringify(body),
   });
 }
+describe("admin record actions", () => {
+  it("saves typed changes together and rejects immutable fields", async () => {
+    const item = await Catalog.create({
+      key: "modal-test",
+      title: "Original item",
+      category: "furniture",
+      priceMinor: 5900,
+      active: true,
+    });
+    const result = await editAdminRecord(
+      request({
+        name: "catalog",
+        id: String(item._id),
+        patch: { title: "Updated item", priceMinor: 6400, active: false },
+      }),
+    );
+    expect(result.status).toBe(200);
+    const saved = await Catalog.findById(item._id).lean();
+    expect(saved).toMatchObject({
+      title: "Updated item",
+      priceMinor: 6400,
+      active: false,
+      key: "modal-test",
+    });
+    expect(
+      await Audit.exists({
+        action: "catalog.update",
+        entityId: String(item._id),
+      }),
+    ).toBeTruthy();
+    const invalid = await editAdminRecord(
+      request({
+        name: "catalog",
+        id: String(item._id),
+        patch: { key: "changed-key" },
+      }),
+    );
+    expect(invalid.status).toBe(422);
+  });
+
+  it("updates reserved slot capacity without resubmitting or changing its dates", async () => {
+    const zone = await Zone.create({
+      name: "Modal test area",
+      prefixes: ["E1"],
+    });
+    const start = new Date(Date.now() + 86400_000);
+    const slot = await Slot.create({
+      zoneId: zone._id,
+      start,
+      end: new Date(start.getTime() + 3600_000),
+      capacity: 3,
+      reservedCount: 1,
+      active: true,
+    });
+    expect(
+      (
+        await editAdminRecord(
+          request({
+            name: "slots",
+            id: String(slot._id),
+            patch: { capacity: 4 },
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    expect((await Slot.findById(slot._id))?.start?.getTime()).toBe(
+      start.getTime(),
+    );
+    expect(
+      (
+        await editAdminRecord(
+          request({
+            name: "slots",
+            id: String(slot._id),
+            patch: { start: new Date(start.getTime() + 1000).toISOString() },
+          }),
+        )
+      ).status,
+    ).toBe(409);
+  });
+
+  it("reports only permitted edits and keeps credentials out of user views", async () => {
+    await User.updateOne(
+      { _id: actor.id },
+      {
+        $set: {
+          resetTokenHash: "private-reset-token",
+          resetTokenExpiresAt: new Date(Date.now() + 3600_000),
+        },
+      },
+    );
+    const users = await adminCollections(
+      new Request("https://example.test/api/admin/collections?name=users"),
+    );
+    const body = await users.json();
+    expect(body.editableFields).toEqual([]);
+    expect(JSON.stringify(body)).not.toContain("private-reset-token");
+    expect(
+      body.rows.every(
+        (row: Record<string, unknown>) =>
+          !("passwordHash" in row) && !("resetTokenHash" in row),
+      ),
+    ).toBe(true);
+    actor.role = "dispatcher";
+    const catalog = await adminCollections(
+      new Request("https://example.test/api/admin/collections?name=catalog"),
+    );
+    expect((await catalog.json()).editableFields).toEqual([]);
+    expect(
+      (
+        await editAdminRecord(
+          request({
+            name: "catalog",
+            id: new mongoose.Types.ObjectId().toString(),
+            patch: { title: "Forbidden edit" },
+          }),
+        )
+      ).status,
+    ).toBe(403);
+  });
+});
+
 describe("transactional dispatch and settlement", () => {
   it("allows only one simultaneous offer and acceptance, with one payout ledger", async () => {
     const offers = await Promise.allSettled([offer(), offer()]);

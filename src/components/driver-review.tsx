@@ -1,4 +1,5 @@
 "use client";
+import { AdminSkeleton } from "./admin-skeleton";
 import { useEffect, useState } from "react";
 import { api, localDate } from "@/lib/operations/client";
 import { CompanyVehicleForm } from "./company-vehicle-form";
@@ -66,7 +67,12 @@ export function DriverReview({ id }: { id: string }) {
   useEffect(() => {
     void load(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-  if (!data) return <p role="status">{error || "Loading application…"}</p>;
+  if (!data)
+    return error ? (
+      <p role="alert">{error}</p>
+    ) : (
+      <AdminSkeleton variant="details" label="Loading application" />
+    );
   const app = data.application;
   return (
     <div className="platform-stack">

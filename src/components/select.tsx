@@ -265,7 +265,7 @@ export function Select({
               <div className="custom-select-empty">No options available</div>
             )}
           </div>,
-          document.body,
+          triggerRef.current?.closest("dialog[open]") ?? document.body,
         )}
     </>
   );

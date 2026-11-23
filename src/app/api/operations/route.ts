@@ -118,6 +118,17 @@ export async function GET(req: Request) {
             assignmentId: { $exists: false },
           }),
           active: await Assignment.countDocuments({ live: true }),
+          driverApplications: await DriverApplication.countDocuments({
+            status: {
+              $in: [
+                "submitted",
+                "driving_review",
+                "vehicle_review",
+                "compliance_review",
+                "more_information",
+              ],
+            },
+          }),
           evidence: await Booking.countDocuments({
             status: "evidence_submitted",
           }),

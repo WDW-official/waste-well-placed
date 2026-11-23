@@ -3,7 +3,7 @@ import { OperationsDashboard } from "@/components/operations-dashboard";
 export default function Page() {
   return (
     <OperationsLayout title="Operations overview">
-      <OperationsDashboard view="jobs" />
+      <OperationsDashboard view="jobs" showSummary />
     </OperationsLayout>
   );
 }

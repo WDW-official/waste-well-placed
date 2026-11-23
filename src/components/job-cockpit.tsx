@@ -1,4 +1,5 @@
 "use client";
+import { AdminSkeleton } from "./admin-skeleton";
 import { BookingManagement } from "./booking-management";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -172,7 +173,12 @@ export function JobCockpit({ id }: { id: string }) {
   useEffect(() => {
     void load(); // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
-  if (!data) return <p role="status">{error || "Loading collection…"}</p>;
+  if (!data)
+    return error ? (
+      <p role="alert">{error}</p>
+    ) : (
+      <AdminSkeleton variant="details" label="Loading collection" />
+    );
   const job = data.booking;
   const post = (body: unknown) => api(`/api/operations/jobs/${id}`, body);
   return (

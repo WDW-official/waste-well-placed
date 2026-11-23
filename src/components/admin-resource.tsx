@@ -1,12 +1,16 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { AdminCreateRecord } from "./admin-create-record";
-import { Select } from "@/components/select";
-import { DashLayout } from "@/components/dash-layout";
-import { adminLinks } from "@/lib/admin-links";
+import { Eye, Pencil } from "lucide-react";
+import {
+  AdminRecordModal,
+  adminFieldLabel,
+  type AdminRow,
+} from "./admin-record-modal";
+import { AdminPage } from "./admin-page";
 import { toast } from "sonner";
-import { request } from "@/lib/booking-client";
-type Row = { _id: string; [key: string]: unknown };
+import { SkeletonBlock, TableRowsSkeleton } from "./admin-skeleton";
+type Row = AdminRow;
 export function AdminResource({
   title,
   name,
@@ -18,6 +22,10 @@ export function AdminResource({
   fields: string[];
   editable?: boolean;
 }) {
+  const [selection, setSelection] = useState<{
+    row: Row;
+    mode: "view" | "edit";
+  } | null>(null);
   const [canCreate, setCanCreate] = useState(false);
   const [editableFields, setEditableFields] = useState<string[]>([]);
   const [rows, setRows] = useState<Row[]>([]),
@@ -53,31 +61,23 @@ export function AdminResource({
     (r) =>
       !filter || JSON.stringify(r).toLowerCase().includes(filter.toLowerCase()),
   );
-  async function edit(row: Row, key: string) {
-    const value = prompt(`New value for ${key}`, String(row[key] ?? ""));
-    if (value === null) return;
-    try {
-      let parsed: unknown = value;
-      if (value === "true") parsed = true;
-      else if (value === "false") parsed = false;
-      else if (value.trim() !== "" && !isNaN(Number(value)))
-        parsed = Number(value);
-      else if (value.startsWith("[") || value.startsWith("{"))
-        parsed = JSON.parse(value);
-      await request(
-        "/api/admin/record",
-        { name, id: row._id, patch: { [key]: parsed } },
-        "PATCH",
-      );
-      toast.success("Updated");
-      await load();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Update failed");
-    }
-  }
   return (
-    <DashLayout type="Operations" title={title} links={adminLinks}>
-      {canCreate && <AdminCreateRecord name={name} onCreated={() => load(1)} />}
+    <AdminPage title={title}>
+      {canCreate ? (
+        <AdminCreateRecord
+          name={name}
+          onCreated={async () => {
+            if (page === 1) await load(1);
+            else setPage(1);
+          }}
+        />
+      ) : (
+        loading && (
+          <div className="mb-6">
+            <SkeletonBlock className="skeleton-button" />
+          </div>
+        )
+      )}
       <div className="flex items-center justify-between mb-5 gap-4">
         <input
           className="input max-w-md"
@@ -86,60 +86,72 @@ export function AdminResource({
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
         />
-        <span className="muted text-sm">{count} records</span>
+        <span className="muted text-sm">
+          {loading ? (
+            <SkeletonBlock className="skeleton-line" />
+          ) : (
+            `${count} records`
+          )}
+        </span>
       </div>
       <div className="table-wrap">
-        <table className="data-table">
+        {loading && (
+          <span className="sr-only" role="status">
+            Loading records…
+          </span>
+        )}
+        <table className="data-table" aria-busy={loading}>
           <thead>
             <tr>
               {fields.map((f) => (
-                <th key={f}>{f}</th>
+                <th key={f}>{adminFieldLabel(f)}</th>
               ))}
-              {editable && <th>Actions</th>}
+              <th className="admin-table-actions-heading">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {shown.map((r) => (
-              <tr key={r._id}>
-                {fields.map((f) => (
-                  <td
-                    key={f}
-                    className="max-w-64 truncate"
-                    title={String(r[f] ?? "")}
-                  >
-                    {typeof r[f] === "object"
-                      ? JSON.stringify(r[f])
-                      : String(r[f] ?? "—")}
+            {loading ? (
+              <TableRowsSkeleton columns={fields.length + 1} />
+            ) : (
+              shown.map((r) => (
+                <tr key={r._id}>
+                  {fields.map((f) => (
+                    <td
+                      key={f}
+                      className="max-w-64 truncate"
+                      title={String(r[f] ?? "")}
+                    >
+                      {typeof r[f] === "object"
+                        ? JSON.stringify(r[f])
+                        : String(r[f] ?? "—")}
+                    </td>
+                  ))}
+                  <td className="admin-table-actions-cell">
+                    <div className="admin-table-actions">
+                      <button
+                        type="button"
+                        onClick={() => setSelection({ row: r, mode: "view" })}
+                      >
+                        <Eye size={16} aria-hidden="true" />
+                        View
+                      </button>
+                      {editable && editableFields.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelection({ row: r, mode: "edit" })}
+                        >
+                          <Pencil size={15} aria-hidden="true" />
+                          Edit
+                        </button>
+                      )}
+                    </div>
                   </td>
-                ))}
-                {editable && (
-                  <td>
-                    <Select
-                      aria-label="Select field to edit"
-                      className="!min-h-9"
-                      value=""
-                      placeholder="Edit field…"
-                      onValueChange={(field) => {
-                        if (field) void edit(r, field);
-                      }}
-                      options={fields
-                        .filter(
-                          (field) =>
-                            !field.startsWith("_") &&
-                            !field.includes("password") &&
-                            editableFields.includes(field),
-                        )
-                        .map((field) => ({ value: field, label: field }))}
-                    />
-                  </td>
-                )}
-              </tr>
-            ))}
-            {!shown.length && (
+                </tr>
+              ))
+            )}
+            {!loading && !shown.length && (
               <tr>
-                <td colSpan={fields.length + Number(editable)}>
-                  {loading ? "Loading…" : "No results found"}
-                </td>
+                <td colSpan={fields.length + 1}>No results found</td>
               </tr>
             )}
           </tbody>
@@ -148,7 +160,7 @@ export function AdminResource({
       <div className="flex gap-3 items-center mt-6">
         <button
           className="btn btn-outline"
-          disabled={page === 1}
+          disabled={loading || page === 1}
           onClick={() => setPage((x) => Math.max(1, x - 1))}
         >
           Previous
@@ -156,12 +168,25 @@ export function AdminResource({
         <span>Page {page}</span>
         <button
           className="btn btn-outline"
-          disabled={page * 20 >= count}
+          disabled={loading || page * 20 >= count}
           onClick={() => setPage((x) => x + 1)}
         >
           Next
         </button>
       </div>
-    </DashLayout>
+      {selection && (
+        <AdminRecordModal
+          key={selection.row._id}
+          name={name}
+          title={title}
+          row={selection.row}
+          fields={fields}
+          editableFields={editable ? editableFields : []}
+          initialMode={selection.mode}
+          onClose={() => setSelection(null)}
+          onSaved={() => load()}
+        />
+      )}
+    </AdminPage>
   );
 }
