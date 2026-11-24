@@ -1,4 +1,5 @@
 "use client";
+import { Eye, EyeOff, Truck, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -8,15 +9,20 @@ import { DriverEmailAccess } from "./driver-email-access";
 
 export function DriverAccess({ register = false }: { register?: boolean }) {
   const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [licence, setLicence] = useState("");
   const [ownsVan, setOwnsVan] = useState("");
   const [vanSize, setVanSize] = useState("");
   return (
-    <div className="platform-stack">
+    <div className={register ? "platform-stack" : "access-driver-stack"}>
       <form
-        className={`platform-card platform-form max-w-lg${register ? " driver-start-card" : ""}`}
+        className={
+          register
+            ? "platform-card platform-form max-w-lg driver-start-card"
+            : "access-card access-form access-driver-form"
+        }
         onSubmit={async (event) => {
           event.preventDefault();
           if (busy || (register && (licence !== "yes" || !ownsVan))) return;
@@ -45,6 +51,17 @@ export function DriverAccess({ register = false }: { register?: boolean }) {
           }
         }}
       >
+        {!register && (
+          <>
+            <div className="access-card-icon">
+              <Truck size={23} />
+            </div>
+            <h2>Driver sign in</h2>
+            <p className="access-card-description">
+              Ready for your next collection? Start here.
+            </p>
+          </>
+        )}
         {register && (
           <>
             <h2>Start your application</h2>
@@ -203,23 +220,44 @@ export function DriverAccess({ register = false }: { register?: boolean }) {
             {!register && (
               <label>
                 Password
-                <input
-                  className="input"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  maxLength={120}
-                />
+                <div className="access-password">
+                  <input
+                    className="input"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    required
+                    maxLength={120}
+                  />
+                  <button
+                    type="button"
+                    className="access-password-toggle"
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                  </button>
+                </div>
               </label>
             )}
+            {!register && (
+              <Link href="/forgot-password" className="access-forgot">
+                Forgot your password?
+              </Link>
+            )}
             {error && (
-              <p role="alert" className="field-error">
+              <p
+                role="alert"
+                className={register ? "field-error" : "access-error"}
+              >
                 {error}
               </p>
             )}
             <button
-              className="btn btn-primary"
+              className={register ? "btn btn-primary" : "btn access-submit"}
               disabled={
                 busy ||
                 (register && (!ownsVan || (ownsVan === "yes" && !vanSize)))
@@ -233,7 +271,7 @@ export function DriverAccess({ register = false }: { register?: boolean }) {
             </button>
           </>
         )}
-        <p className={register ? "driver-start-signin" : undefined}>
+        <p className={register ? "driver-start-signin" : "access-switch"}>
           {register ? "Already applied?" : "New to the team?"}{" "}
           <Link
             className="underline"
@@ -250,10 +288,12 @@ export function DriverAccess({ register = false }: { register?: boolean }) {
       </form>
       {!register && (
         <>
-          <Link href="/forgot-password" className="underline">
-            Forgot your password?
-          </Link>
-          <DriverEmailAccess />
+          <details className="access-email-card">
+            <summary>
+              Applied without a password? <ChevronDown size={18} />
+            </summary>
+            <DriverEmailAccess />
+          </details>
         </>
       )}
     </div>

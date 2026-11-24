@@ -179,6 +179,8 @@ async function main() {
       { path: "/book/schedule", role: "public", userId: "" },
       { path: "/book/checkout", role: "public", userId: "" },
       { path: "/book/photo-quote", role: "public", userId: "" },
+      { path: "/login", role: "public", userId: "" },
+      { path: "/register", role: "public", userId: "" },
       { path: "/forgot-password", role: "public", userId: "" },
       {
         path: "/reset-password?token=" + "a".repeat(64),
@@ -426,6 +428,53 @@ async function main() {
             .waitFor();
         }
         await page.waitForTimeout(500);
+        if (["/login", "/register", "/driver/login"].includes(scenario.path)) {
+          const form = page.locator("form.access-card");
+          const password = form.locator('input[type="password"]');
+          await password.fill("test-password-only");
+          await form
+            .getByRole("button", { name: "Show password", exact: true })
+            .click();
+          if (
+            (await form
+              .locator('.access-password input[type="text"]')
+              .count()) === 0
+          )
+            throw Error("Password visibility control did not work");
+          await form
+            .getByRole("button", { name: "Hide password", exact: true })
+            .click();
+          if (scenario.path !== "/register") {
+            const driver = scenario.path === "/driver/login";
+            await page.route(
+              driver ? "**/api/driver/login" : "**/api/auth/login",
+              (route) =>
+                route.fulfill({
+                  status: 401,
+                  json: { error: "Check your email and password." },
+                }),
+            );
+            await form
+              .locator('input[type="email"]')
+              .fill("viewer@example.test");
+            await form
+              .getByRole("button", {
+                name: driver ? "Sign in as a driver" : "Log in",
+                exact: true,
+              })
+              .click();
+            await form
+              .getByRole("alert")
+              .filter({ hasText: "Check your email and password." })
+              .waitFor();
+            if (driver) {
+              await page.locator(".access-email-card summary").click();
+              await page
+                .getByRole("button", { name: "Email me an access link" })
+                .waitFor();
+            }
+          }
+        }
         if (selectionPricePage) {
           await page
             .getByRole("status", { name: "Loading price", exact: true })

@@ -32,7 +32,7 @@ export function DriverEmailAccess() {
         }
       }}
     >
-      <h2>Applied without a password?</h2>
+      <h2>Get your access link</h2>
       <p>
         Get an email link to return to your application. Once approved, your
         link lets you set a password.

@@ -1,12 +1,9 @@
-import { PlatformShell } from "@/components/platform-shell";
+import { AccessPage } from "@/components/access-page";
 import { DriverAccess } from "@/components/driver-access";
 export default function DriverLogin() {
   return (
-    <PlatformShell
-      title="Driver sign in"
-      subtitle="Your application, collections and earnings in one place."
-    >
+    <AccessPage driver>
       <DriverAccess />
-    </PlatformShell>
+    </AccessPage>
   );
 }
