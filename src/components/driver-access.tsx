@@ -53,10 +53,12 @@ export function DriverAccess({ register = false }: { register?: boolean }) {
       >
         {!register && (
           <>
-            <div className="access-card-icon">
-              <Truck size={23} />
+            <div className="access-card-title">
+              <div className="access-card-icon">
+                <Truck size={23} aria-hidden="true" />
+              </div>
+              <h2>Driver sign in</h2>
             </div>
-            <h2>Driver sign in</h2>
             <p className="access-card-description">
               Ready for your next collection? Start here.
             </p>
