@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { Eye, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { request } from "@/lib/booking-client";
+import { moneyInput } from "@/lib/operations/client";
+import { gbp } from "@/lib/utils";
 import { AdminImageInput, AdminImagePreview } from "./admin-image-input";
 import {
   resourceFields,
@@ -44,6 +46,7 @@ function fieldFor(name: string, key: string, value: unknown): ResourceField {
 function inputValue(value: unknown, type: ResourceField["type"]) {
   if (type === "boolean") return value === true ? "true" : "false";
   if (value === null || value === undefined) return "";
+  if (type === "money") return (Number(value) / 100).toFixed(2);
   if (type === "json") return JSON.stringify(value, null, 2);
   if (type === "datetime") {
     const date = new Date(String(value));
@@ -70,17 +73,20 @@ export function AdminRecordModal({
   row: AdminRow;
   fields: string[];
   editableFields: string[];
-  initialMode: "view" | "edit";
+  initialMode: "view" | "edit" | "price";
   onClose: () => void;
   onSaved: () => Promise<void>;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  const [mode, setMode] = useState(initialMode);
+  const priceOnly = initialMode === "price";
+  const [mode, setMode] = useState(initialMode === "view" ? "view" : "edit");
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
   const working = busy || uploading;
   const [error, setError] = useState("");
-  const editFields = editableFields.map((key) => fieldFor(name, key, row[key]));
+  const editFields = editableFields
+    .filter((key) => !priceOnly || key === "priceMinor")
+    .map((key) => fieldFor(name, key, row[key]));
   const initialValues = Object.fromEntries(
     editFields.map((field) => [
       field.key,
@@ -109,8 +115,10 @@ export function AdminRecordModal({
   useEffect(() => {
     const element = dialog.current;
     element?.showModal();
+    if (priceOnly)
+      element?.querySelector<HTMLInputElement>("#record-priceMinor")?.focus();
     return () => element?.close();
-  }, []);
+  }, [priceOnly]);
 
   async function save(event: React.FormEvent) {
     event.preventDefault();
@@ -121,7 +129,8 @@ export function AdminRecordModal({
       for (const field of editFields) {
         const value = values[field.key];
         if (value === initialValues[field.key]) continue;
-        if (field.type === "number") {
+        if (field.type === "money") patch[field.key] = moneyInput(value);
+        else if (field.type === "number") {
           if (!value.trim() || !Number.isFinite(Number(value)))
             throw Error(`Enter a valid number for ${field.label}.`);
           patch[field.key] = Number(value);
@@ -157,7 +166,7 @@ export function AdminRecordModal({
   return (
     <dialog
       ref={dialog}
-      className="admin-record-dialog"
+      className={`admin-record-dialog${priceOnly ? " admin-price-dialog" : ""}`}
       aria-labelledby="admin-record-title"
       onClose={() => {
         // Strict Mode closes and reopens the dialog during effect replay.
@@ -179,7 +188,11 @@ export function AdminRecordModal({
           <div>
             <span className="eyebrow">{title}</span>
             <h2 id="admin-record-title">
-              {mode === "view" ? "Record details" : "Edit record"}
+              {mode === "view"
+                ? "Record details"
+                : priceOnly
+                  ? "Change price"
+                  : "Edit record"}
             </h2>
           </div>
           <button
@@ -231,6 +244,8 @@ export function AdminRecordModal({
                         </>
                       ) : value === null || value === "" ? (
                         "—"
+                      ) : fieldFor(name, key, value).type === "money" ? (
+                        gbp(Number(value))
                       ) : typeof value === "boolean" ? (
                         value ? (
                           "Yes"
@@ -250,7 +265,9 @@ export function AdminRecordModal({
           ) : (
             <div className="platform-form admin-record-form">
               <p className="muted">
-                Update the fields below. Your changes are saved together.
+                {priceOnly
+                  ? "Enter the new price in pounds (£), then save."
+                  : "Update the fields below. Your changes are saved together."}
               </p>
               {name === "slots" && Number(row.reservedCount) > 0 && (
                 <p className="platform-notice">
@@ -335,7 +352,7 @@ export function AdminRecordModal({
                           aria-label={field.label}
                           className="input"
                           type={
-                            field.type === "number"
+                            field.type === "number" || field.type === "money"
                               ? "number"
                               : field.type === "datetime"
                                 ? "datetime-local"
@@ -343,11 +360,22 @@ export function AdminRecordModal({
                           }
                           required={field.required}
                           min={
-                            field.type === "number" && field.key !== "sortOrder"
+                            (field.type === "number" ||
+                              field.type === "money") &&
+                            field.key !== "sortOrder"
                               ? 0
                               : undefined
                           }
-                          step={field.type === "number" ? 1 : undefined}
+                          step={
+                            field.type === "money"
+                              ? "0.01"
+                              : field.type === "number"
+                                ? 1
+                                : undefined
+                          }
+                          inputMode={
+                            field.type === "money" ? "decimal" : undefined
+                          }
                           disabled={working || locked}
                           value={values[field.key] ?? ""}
                           onChange={(event) =>
@@ -395,7 +423,9 @@ export function AdminRecordModal({
                 ? "Uploading image…"
                 : busy
                   ? "Saving…"
-                  : "Save changes"}
+                  : priceOnly
+                    ? "Save price"
+                    : "Save changes"}
             </button>
           )}
         </footer>

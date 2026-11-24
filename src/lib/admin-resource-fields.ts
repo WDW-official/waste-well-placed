@@ -2,7 +2,14 @@ export type ResourceField = {
   key: string;
   label: string;
   type?:
-    "text" | "number" | "boolean" | "json" | "datetime" | "textarea" | "image";
+    | "text"
+    | "number"
+    | "boolean"
+    | "json"
+    | "datetime"
+    | "textarea"
+    | "image"
+    | "money";
   required?: boolean;
 };
 export const adminEditableFields: Record<string, string[]> = {
@@ -73,8 +80,8 @@ export const resourceFields: Record<string, ResourceField[]> = {
     { key: "image", label: "Image", type: "image" },
     {
       key: "priceMinor",
-      label: "Price (pence)",
-      type: "number",
+      label: "Price (£)",
+      type: "money",
       required: true,
     },
     { key: "active", label: "Active", type: "boolean" },
@@ -84,8 +91,8 @@ export const resourceFields: Record<string, ResourceField[]> = {
     { key: "title", label: "Load title", required: true },
     {
       key: "priceMinor",
-      label: "Price (pence)",
-      type: "number",
+      label: "Price (£)",
+      type: "money",
       required: true,
     },
     { key: "active", label: "Active", type: "boolean" },

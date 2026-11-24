@@ -364,7 +364,7 @@ async function main() {
               exact: true,
             });
             await mobileNav.locator("a").last().scrollIntoViewIfNeeded();
-            if (!(await mobileNav.evaluate((element) => element.scrollTop > 0)))
+            if (!(await mobileNav.evaluate((element) => element.scrollHeight <= element.clientHeight + 1 || element.scrollTop > 0)))
               throw Error("Mobile sidebar does not scroll");
             await page
               .getByRole("button", { name: "Close navigation" })
@@ -590,8 +590,8 @@ async function main() {
                   .getByLabel("Item name", { exact: true })
                   .fill("Updated modal item");
                 await modal
-                  .getByLabel("Price (pence)", { exact: true })
-                  .fill("6400");
+                  .getByLabel("Price (£)", { exact: true })
+                  .fill("64.00");
                 await modal
                   .getByRole("checkbox", { name: /^Active/ })
                   .uncheck();
@@ -687,6 +687,57 @@ async function main() {
             await page.keyboard.press("Escape");
             await modal.waitFor({ state: "hidden" });
           }
+        }
+        if (["/admin/catalog", "/admin/pricing"].includes(scenario.path)) {
+          await page.locator(".table-wrap").evaluate((element) => {
+            element.scrollLeft = element.scrollWidth;
+          });
+          const priceButton = page
+            .getByRole("button", { name: /^Change price for/ })
+            .first();
+          await priceButton.click();
+          const priceModal = page.getByRole("dialog", {
+            name: "Change price",
+            exact: true,
+          });
+          await priceModal.waitFor();
+          const priceInput = priceModal.getByRole("spinbutton", {
+            name: "Price (£)",
+            exact: true,
+          });
+          const previous = await priceInput.inputValue();
+          const next = (Number(previous) + 1.25).toFixed(2);
+          await priceInput.fill(next);
+          await page.screenshot({
+            path: resolve(output, `${width}-${safeName}-change-price.png`),
+          });
+          const changed = page.waitForResponse(
+            (response) =>
+              response.url().endsWith("/api/admin/record") &&
+              response.request().method() === "PATCH",
+          );
+          await priceModal
+            .getByRole("button", { name: "Save price", exact: true })
+            .click();
+          const saved = await changed;
+          if (!saved.ok())
+            throw Error(`Price update failed: ${await saved.text()}`);
+          const payload = saved.request().postDataJSON();
+          if (
+            Object.keys(payload.patch).join(",") !== "priceMinor" ||
+            payload.patch.priceMinor !== Math.round(Number(next) * 100)
+          )
+            throw Error("GBP price was not converted to pence correctly");
+          await priceModal.waitFor({ state: "hidden" });
+          await page
+            .getByRole("button", { name: /^Change price for/ })
+            .first()
+            .click();
+          if ((await priceInput.inputValue()) !== next)
+            throw Error("Saved price did not persist in pounds");
+          await priceModal
+            .getByRole("button", { name: "Cancel", exact: true })
+            .click();
         }
         if (width === 1440 && scenario.path === "/admin") {
           await page

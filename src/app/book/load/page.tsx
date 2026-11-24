@@ -69,7 +69,7 @@ function LoadSelector() {
   >({});
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/catalog/loads")
+    fetch("/api/catalog/loads", { cache: "no-store" })
       .then((response) => {
         if (!response.ok) throw new Error("Unable to load prices");
         return response.json();

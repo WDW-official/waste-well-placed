@@ -10,6 +10,8 @@ import {
 import { AdminPage } from "./admin-page";
 import { toast } from "sonner";
 import { SkeletonBlock, TableRowsSkeleton } from "./admin-skeleton";
+import { resourceFields } from "@/lib/admin-resource-fields";
+import { gbp } from "@/lib/utils";
 type Row = AdminRow;
 export function AdminResource({
   title,
@@ -24,7 +26,7 @@ export function AdminResource({
 }) {
   const [selection, setSelection] = useState<{
     row: Row;
-    mode: "view" | "edit";
+    mode: "view" | "edit" | "price";
   } | null>(null);
   const [canCreate, setCanCreate] = useState(false);
   const [editableFields, setEditableFields] = useState<string[]>([]);
@@ -63,6 +65,11 @@ export function AdminResource({
   );
   return (
     <AdminPage title={title}>
+      {editable && editableFields.includes("priceMinor") && (
+        <p className="muted text-sm mb-5">
+          Prices are in pounds (£). Select a price to change it, or use Edit.
+        </p>
+      )}
       {canCreate ? (
         <AdminCreateRecord
           name={name}
@@ -104,7 +111,10 @@ export function AdminResource({
           <thead>
             <tr>
               {fields.map((f) => (
-                <th key={f}>{adminFieldLabel(f)}</th>
+                <th key={f}>
+                  {resourceFields[name]?.find((field) => field.key === f)
+                    ?.label ?? adminFieldLabel(f)}
+                </th>
               ))}
               <th className="admin-table-actions-heading">Actions</th>
             </tr>
@@ -121,9 +131,29 @@ export function AdminResource({
                       className="max-w-64 truncate"
                       title={String(r[f] ?? "")}
                     >
-                      {typeof r[f] === "object"
-                        ? JSON.stringify(r[f])
-                        : String(r[f] ?? "—")}
+                      {f === "priceMinor" &&
+                      editable &&
+                      editableFields.includes(f) ? (
+                        <button
+                          type="button"
+                          className="admin-price-button"
+                          title="Change price"
+                          aria-label={`Change price for ${String(r.title ?? r.key ?? r._id)}`}
+                          onClick={() =>
+                            setSelection({ row: r, mode: "price" })
+                          }
+                        >
+                          {gbp(Number(r[f] ?? 0))}
+                          <Pencil size={14} aria-hidden="true" />
+                        </button>
+                      ) : resourceFields[name]?.find((field) => field.key === f)
+                          ?.type === "money" ? (
+                        gbp(Number(r[f] ?? 0))
+                      ) : typeof r[f] === "object" ? (
+                        JSON.stringify(r[f])
+                      ) : (
+                        String(r[f] ?? "—")
+                      )}
                     </td>
                   ))}
                   <td className="admin-table-actions-cell">

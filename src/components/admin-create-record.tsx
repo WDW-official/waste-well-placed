@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
-import { api } from "@/lib/operations/client";
+import { api, moneyInput } from "@/lib/operations/client";
 import { resourceFields } from "@/lib/admin-resource-fields";
 import { defaultLoads } from "@/lib/catalog-defaults";
 import { Select } from "./select";
@@ -109,15 +109,17 @@ function CreateRecordModal({
                 continue;
               }
               record[field.key] =
-                field.type === "number"
-                  ? Number(value)
-                  : field.type === "boolean"
-                    ? value === "true"
-                    : field.type === "json"
-                      ? JSON.parse(value)
-                      : field.type === "datetime"
-                        ? new Date(value).toISOString()
-                        : value;
+                field.type === "money"
+                  ? moneyInput(value)
+                  : field.type === "number"
+                    ? Number(value)
+                    : field.type === "boolean"
+                      ? value === "true"
+                      : field.type === "json"
+                        ? JSON.parse(value)
+                        : field.type === "datetime"
+                          ? new Date(value).toISOString()
+                          : value;
             }
             await api("/api/admin/collections", { name, record });
             await onCreated();
@@ -273,14 +275,20 @@ function CreateRecordModal({
                       aria-label={field.label}
                       className="input"
                       type={
-                        field.type === "number"
+                        field.type === "number" || field.type === "money"
                           ? "number"
                           : field.type === "datetime"
                             ? "datetime-local"
                             : "text"
                       }
                       required={field.required}
-                      min={field.type === "number" ? 0 : undefined}
+                      min={
+                        field.type === "number" || field.type === "money"
+                          ? 0
+                          : undefined
+                      }
+                      step={field.type === "money" ? "0.01" : undefined}
+                      inputMode={field.type === "money" ? "decimal" : undefined}
                       value={values[field.key] ?? ""}
                       onChange={(event) =>
                         setValues({

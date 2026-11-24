@@ -275,6 +275,62 @@ function request(body: unknown) {
   });
 }
 describe("admin record actions", () => {
+  it("uses admin price changes for new item and load quotes", async () => {
+    const item = await Catalog.create({
+      key: "chair",
+      title: "Chair",
+      category: "Furniture",
+      priceMinor: 7400,
+      active: true,
+    });
+    const load = await Tariff.create({
+      key: "garden-quarter",
+      title: "Garden quarter load",
+      priceMinor: 14900,
+      active: true,
+    });
+    expect(
+      (
+        await editAdminRecord(
+          request({
+            name: "catalog",
+            id: String(item._id),
+            patch: { priceMinor: 9450 },
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await editAdminRecord(
+          request({
+            name: "tariffs",
+            id: String(load._id),
+            patch: { priceMinor: 17950 },
+          }),
+        )
+      ).status,
+    ).toBe(200);
+    const base = {
+      postcode: "SW1A 1AA",
+      stairs: false,
+      longCarry: false,
+      specialHandling: false,
+    };
+    expect(
+      (
+        await quotePrice({
+          ...base,
+          kind: "items",
+          items: [{ key: "chair", qty: 1 }],
+        })
+      ).subtotalMinor,
+    ).toBe(9450);
+    expect(
+      (await quotePrice({ ...base, kind: "load", loadKey: "garden-quarter" }))
+        .subtotalMinor,
+    ).toBe(17950);
+  });
   it("saves typed changes together and rejects immutable fields", async () => {
     const item = await Catalog.create({
       key: "modal-test",

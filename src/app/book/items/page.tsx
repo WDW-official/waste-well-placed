@@ -37,7 +37,7 @@ function ItemsContent() {
   const [catalog, setCatalog] = useState(ITEMS);
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/catalog/items")
+    fetch("/api/catalog/items", { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok)
           throw new Error("Unable to load the current price book");

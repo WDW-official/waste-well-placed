@@ -5607,6 +5607,27 @@ body:has(.admin-workspace) {
 .admin-table-actions-cell {
   box-shadow: -4px 0 8px rgb(18 59 48 / 3%);
 }
+.admin-record-dialog.admin-price-dialog { width: min(480px, calc(100vw - 24px)); }
+.admin-price-dialog .platform-form-grid { grid-template-columns: minmax(0, 1fr); }
+.admin-price-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #cfe1c3;
+  border-radius: 8px;
+  background: #f1f7eb;
+  color: #365d27;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.admin-price-button:hover {
+  background: #e6f1db;
+  border-color: #78a655;
+}
 .admin-table-actions {
   display: flex;
   align-items: center;
