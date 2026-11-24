@@ -26,7 +26,9 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
     try {
       const result = await request<{ user?: { role?: string } }>(
         `/api/auth/${mode}`,
-        form,
+        mode === "login"
+          ? { email: form.email, password: form.password }
+          : form,
       );
       toast.success(mode === "login" ? "Welcome back" : "Account created");
       router.refresh();

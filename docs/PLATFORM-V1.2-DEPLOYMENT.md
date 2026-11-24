@@ -29,6 +29,8 @@ The existing Next.js / React / TypeScript, MongoDB / Mongoose, Cloudinary, Strip
 
 Retain existing database, Stripe, Cloudinary and Resend variables. MongoDB must be a replica set / Atlas deployment supporting transactions. Do not point integration tests at the application database.
 
+If login works locally but fails on Vercel, verify `MONGODB_URI` and `SESSION_SECRET` in the project's Production environment. The database URI must point to the database containing the account, and the session secret must contain at least 32 characters. Local `.env` values do not configure the deployed app. Redeploy after updating environment variables. Missing login configuration returns HTTP 503 and logs the invalid variable names without their values. Other unexpected login failures log the failing stage and error type without credentials or connection strings. Failed initial MongoDB connections are cleared from the cache so a later request can retry.
+
 If uploads report Cloudinary `Invalid Signature` or authentication HTTP 401, replace `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` with matching credentials from the same Cloudinary product environment. Use the API secret, not the API key or a delivery signing key. Restart the development server after updating `.env`; update deployment environment variables and redeploy for production. The SDK generates upload signatures automatically; keep uploads authenticated. Credential failures return HTTP 503 to the app and a configuration diagnostic in server logs.
 
 Add these private variables:
