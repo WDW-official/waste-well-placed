@@ -52,7 +52,7 @@ export const resourceFields: Record<string, ResourceField[]> = {
     { key: "active", label: "Active", type: "boolean" },
   ],
   slots: [
-    { key: "zoneId", label: "Service area", required: true },
+    { key: "zoneId", label: "Schedule group (optional)" },
     {
       key: "start",
       label: "Start (your local time)",

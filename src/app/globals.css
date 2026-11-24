@@ -3951,8 +3951,7 @@ body:has(#main-content form):not(:has(#main-content .home-hero)) > .footer {
     font-size: 14px;
   }
   .item-categories {
-    margin-right: -18px;
-    padding-right: 18px;
+    max-width: 100%;
   }
   .item-grid {
     gap: 12px;
@@ -4170,6 +4169,17 @@ body:has(#main-content form):not(:has(#main-content .home-hero)) > .footer {
   margin: 0;
   padding: 0;
   min-width: 0;
+}
+.quote-request-form input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }
 .request-section {
   margin-bottom: 34px;
@@ -4835,7 +4845,7 @@ body:has(#main-content form):not(:has(#main-content .home-hero)) > .footer {
     gap: 8px;
   }
   .request-optional-fields .form-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .request-optional-fields .request-label {
     font-size: 13px;
@@ -5005,7 +5015,11 @@ body:has(#main-content form):not(:has(#main-content .home-hero)) > .footer {
 }
 .request-optional-fields > .form-grid {
   min-height: 0;
+  min-width: 0;
   overflow: hidden;
+}
+.request-optional-fields > .form-grid > div {
+  min-width: 0;
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .home-step:hover,
@@ -5607,8 +5621,106 @@ body:has(.admin-workspace) {
 .admin-table-actions-cell {
   box-shadow: -4px 0 8px rgb(18 59 48 / 3%);
 }
-.admin-record-dialog.admin-price-dialog { width: min(480px, calc(100vw - 24px)); }
-.admin-price-dialog .platform-form-grid { grid-template-columns: minmax(0, 1fr); }
+.address-lookup {
+  margin-bottom: 22px;
+  min-width: 0;
+}
+.price-skeleton {
+  display: inline-block;
+  width: 4.5ch;
+  height: 0.85em;
+  min-width: 58px;
+  vertical-align: middle;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #e1e9e4 25%, #f4f7f5 50%, #e1e9e4 75%);
+  background-size: 200% 100%;
+  animation: price-shimmer 1.5s ease-in-out infinite;
+}
+.price-unavailable {
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+.item-card > p > .price-skeleton {
+  width: 72px;
+  height: 14px;
+}
+.price-load-error {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--forest);
+}
+.price-load-error button {
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+@keyframes price-shimmer {
+  to { background-position: -200% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .price-skeleton { animation: none; }
+}
+.address-lookup-controls {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+.address-lookup-input {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.address-lookup-input > svg {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #587368;
+}
+.address-lookup-input > .input {
+  padding-left: 42px;
+  text-transform: uppercase;
+}
+.address-lookup-input > .input::placeholder {
+  text-transform: none;
+}
+.address-lookup-controls > .btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+  padding-inline: 16px;
+  font-size: 14px;
+}
+.address-lookup > p {
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 10px;
+}
+.address-lookup-manual {
+  display: inline-block;
+  justify-self: start;
+  padding-block: 10px;
+  color: #006747;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+@media (max-width: 400px) {
+  .address-lookup-controls {
+    flex-direction: column;
+  }
+  .address-lookup-controls > .btn {
+    width: 100%;
+  }
+}
+.admin-record-dialog.admin-price-dialog {
+  width: min(480px, calc(100vw - 24px));
+}
+.admin-price-dialog .platform-form-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
 .admin-price-button {
   display: inline-flex;
   align-items: center;

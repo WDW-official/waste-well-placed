@@ -1,4 +1,5 @@
 "use client";
+import { AddressLookup } from "./address-lookup";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { api, localDate } from "@/lib/operations/client";
@@ -174,16 +175,41 @@ export function CustomerQuote({ id, token }: { id: string; token: string }) {
                       });
                     }}
                   >
+                    <AddressLookup
+                      value={address.postcode}
+                      manualInputId="quote-customer-line1"
+                      onPostcodeChange={(value) => {
+                        setAddress((current) => ({
+                          ...current,
+                          postcode: value,
+                          ...(value.replace(/\s/g, "").toUpperCase() !==
+                          current.postcode.replace(/\s/g, "").toUpperCase()
+                            ? { line1: "", city: "" }
+                            : {}),
+                        }));
+                        setSlots([]);
+                        setSlotId("");
+                      }}
+                      onSelect={(selected) => {
+                        setAddress((current) => ({
+                          ...current,
+                          city: selected.city,
+                          postcode: selected.postcode,
+                        }));
+                        setSlots([]);
+                        setSlotId("");
+                      }}
+                    />
                     <div className="platform-form-grid">
                       {[
                         ["line1", "Street address"],
-                        ["city", "Town / city"],
-                        ["postcode", "Collection postcode"],
+                        ["city", "Town / city / area"],
                       ].map(([key, label]) => (
                         <label key={key}>
                           {label}
                           <input
                             className="input"
+                            id={`quote-customer-${key}`}
                             required
                             value={address[key as keyof typeof address]}
                             onChange={(event) => {

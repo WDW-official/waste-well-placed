@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useCurrentEstimate } from "@/components/use-current-estimate";
 import { BookingShell } from "@/components/booking-shell";
 import { loadDraft, request, type BookingDraft } from "@/lib/booking-client";
 import { getLoad } from "@/lib/constants";
@@ -10,6 +11,10 @@ export default function Checkout() {
   const [d, setD] = useState<BookingDraft | null>(null),
     [busy, setBusy] = useState(false),
     [accepted, setAccepted] = useState(false);
+  const price = useCurrentEstimate(setD);
+  useEffect(() => {
+    setAccepted(false);
+  }, [d?.estimate?.totalMinor]);
   const idempotency = useRef<string>("");
   useEffect(() => {
     const draft = loadDraft();
@@ -161,9 +166,19 @@ export default function Checkout() {
             Final price is checked again by the server. You need to sign in
             before checkout.
           </p>
+          {price.checking && (
+            <p role="status" className="muted">
+              Checking current price…
+            </p>
+          )}
+          {price.error && (
+            <p role="alert" className="field-error">
+              {price.error} Refresh the page to try again.
+            </p>
+          )}
           <button
             className="btn btn-primary w-full mt-5"
-            disabled={busy || !accepted}
+            disabled={busy || !accepted || price.checking || !!price.error}
             onClick={pay}
           >
             {busy ? "Preparing checkout…" : "Continue to secure payment"}

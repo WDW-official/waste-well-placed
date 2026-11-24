@@ -2,6 +2,8 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { PriceValue } from "@/components/price-value";
+import { usePriceCatalog } from "@/components/use-price-catalog";
 import { SPECIALIST_LOAD_IMAGES } from "@/lib/images";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BookingShell } from "@/components/booking-shell";
@@ -12,7 +14,6 @@ import {
   isSpecialistLoadService,
 } from "@/lib/constants";
 import { loadDraft, saveDraft, type BookingDraft } from "@/lib/booking-client";
-import { gbp } from "@/lib/utils";
 import {
   Camera,
   ArrowRight,
@@ -64,36 +65,23 @@ function LoadSelector() {
   const specialist = isSpecialistLoadService(service);
   const serviceTitle =
     service === "construction-waste" ? "Construction waste" : "Garden waste";
-  const [prices, setPrices] = useState<
-    Record<string, { base: number; title: string; active: boolean }>
-  >({});
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/catalog/loads", { cache: "no-store" })
-      .then((response) => {
-        if (!response.ok) throw new Error("Unable to load prices");
-        return response.json();
-      })
-      .then((data) => {
-        if (!cancelled)
-          setPrices(
-            Object.fromEntries(
-              data.loads.map(
-                (load: {
-                  key: string;
-                  base: number;
-                  title: string;
-                  active: boolean;
-                }) => [load.key, load],
-              ),
-            ),
-          );
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const {
+    data: currentPrices,
+    error: priceError,
+    loading: pricesLoading,
+    retry,
+  } = usePriceCatalog<{
+    key: string;
+    base: number;
+    title: string;
+    active: boolean;
+  }>("loads");
+  const pricesReady = !!currentPrices && !pricesLoading && !priceError;
+  const prices = useMemo(
+    () =>
+      Object.fromEntries((currentPrices ?? []).map((load) => [load.key, load])),
+    [currentPrices],
+  );
   const serviceLoads = useMemo(
     () =>
       SPECIALIST_LOADS.filter(
@@ -147,7 +135,7 @@ function LoadSelector() {
     availableGroups.find((g) => g.keys.includes(loads[visible]?.key)) ??
     availableGroups[0];
   function select(key: string) {
-    if (!draft) return;
+    if (!draft || !pricesReady) return;
     const next = {
       ...draft,
       kind: "load" as const,
@@ -195,6 +183,14 @@ function LoadSelector() {
       }
       step={0}
     >
+      {priceError && (
+        <p className="price-load-error" role="alert">
+          Prices are temporarily unavailable.{" "}
+          <button type="button" onClick={retry}>
+            Try again
+          </button>
+        </p>
+      )}
       <div className="load-layout">
         <div className="load-main">
           <div className="load-categories">
@@ -375,7 +371,13 @@ function LoadSelector() {
                 <div className="load-price">
                   <div>
                     <small>Guide price from</small>
-                    <strong>{gbp(load.base)}</strong>
+                    <strong>
+                      <PriceValue
+                        amount={load.base}
+                        ready={pricesReady}
+                        error={priceError}
+                      />
+                    </strong>
                   </div>
                   <span>
                     Final price checked
@@ -385,7 +387,7 @@ function LoadSelector() {
                 </div>
                 <button
                   className="btn btn-primary"
-                  disabled={!draft}
+                  disabled={!draft || !pricesReady}
                   onClick={() => select(load.key)}
                 >
                   Select {load.title.split(" — ").at(-1)?.toLowerCase()}
@@ -459,9 +461,8 @@ function LoadSelector() {
             <div>
               <Info size={17} />
               <small>
-                Guide prices use the current sample tariffs. Area charges,
-                access extras and applicable VAT are calculated with your
-                address.
+                Prices use the current price book. Area charges, access extras
+                and applicable VAT are calculated with your address.
               </small>
             </div>
           </div>

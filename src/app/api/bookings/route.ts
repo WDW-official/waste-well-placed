@@ -74,7 +74,6 @@ export async function POST(req: Request) {
         existing: true,
       });
     const zone = await findZone(data.postcode);
-    if (!zone) return fail("Outside the service area", 422);
     if (data.specialHandling)
       return fail("Special waste needs manual review", 422);
     const hold = await Hold.findOne({
@@ -91,12 +90,11 @@ export async function POST(req: Request) {
       );
     const slot = await Slot.findOne({
       _id: data.slotId,
-      zoneId: zone._id,
       start: { $gt: new Date() },
       active: true,
     });
     if (!slot) return fail("Slot is no longer available", 409);
-    const estimate = await quotePrice(data, zone.surchargeMinor);
+    const estimate = await quotePrice(data, zone?.surchargeMinor ?? 0);
     const load = data.kind === "load" ? getLoad(data.loadKey) : undefined;
     const db = await connectDB();
     const booked = await db.connection.transaction(async (session) => {

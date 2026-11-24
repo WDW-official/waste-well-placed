@@ -200,7 +200,7 @@ export function HeroBooking() {
             <Check size={15} aria-hidden="true" />
             <span>No payment until checkout</span>
             <span aria-hidden="true">·</span>
-            <span>Coverage checked before booking</span>
+            <span>Find your address by postcode</span>
           </p>
         )}
       </form>

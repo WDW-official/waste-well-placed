@@ -223,8 +223,7 @@ function CreateRecordModal({
                         options={[
                           {
                             value: "",
-                            label: "Choose service area",
-                            disabled: true,
+                            label: "All UK postcodes",
                           },
                           ...zones.map((zone) => ({
                             value: zone._id,
@@ -317,12 +316,7 @@ function CreateRecordModal({
           >
             Cancel
           </button>
-          <button
-            className="btn btn-dark"
-            disabled={
-              working || zonesLoading || (name === "slots" && !zones.length)
-            }
-          >
+          <button className="btn btn-dark" disabled={working || zonesLoading}>
             {uploading
               ? "Uploading image…"
               : busy

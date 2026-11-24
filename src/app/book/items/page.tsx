@@ -5,8 +5,9 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BookingShell } from "@/components/booking-shell";
 import { ITEMS } from "@/lib/constants";
+import { PriceValue } from "@/components/price-value";
+import { usePriceCatalog } from "@/components/use-price-catalog";
 import { loadDraft, saveDraft, type BookingDraft } from "@/lib/booking-client";
-import { gbp } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Search,
@@ -34,25 +35,14 @@ export default function Items() {
 function ItemsContent() {
   const [draft, setDraft] = useState<BookingDraft | null>(null);
   const [search, setSearch] = useState("");
-  const [catalog, setCatalog] = useState(ITEMS);
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/catalog/items", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok)
-          throw new Error("Unable to load the current price book");
-        return response.json();
-      })
-      .then((data) => {
-        if (!cancelled) setCatalog(data.items);
-      })
-      .catch((error) => {
-        if (!cancelled) toast.error(error.message);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+  const {
+    data: currentCatalog,
+    error: priceError,
+    loading: pricesLoading,
+    retry,
+  } = usePriceCatalog<(typeof ITEMS)[number]>("items");
+  const pricesReady = !!currentCatalog && !pricesLoading && !priceError;
+  const catalog = useMemo(() => currentCatalog ?? ITEMS, [currentCatalog]);
   const searchParams = useSearchParams();
   const router = useRouter();
   useEffect(() => {
@@ -83,7 +73,7 @@ function ItemsContent() {
     [catalog, category, search],
   );
   function modify(key: string, delta: number) {
-    if (!draft) return;
+    if (!draft || !pricesReady) return;
     const current = draft.items || [];
     const qty = Math.max(
       0,
@@ -119,6 +109,14 @@ function ItemsContent() {
       title="A few things ready to go?"
       desc="Select the type of item you want to dispose, a sofa, a fridge, and we’ll come and collect it for you."
     >
+      {priceError && (
+        <p className="price-load-error" role="alert">
+          Prices are temporarily unavailable.{" "}
+          <button type="button" onClick={retry}>
+            Try again
+          </button>
+        </p>
+      )}
       <div className="items-layout">
         <div className="items-main">
           <div className="input-with-icon items-search">
@@ -158,13 +156,18 @@ function ItemsContent() {
                   <span className="eyebrow">{item.category}</span>
                   <h2>{item.title}</h2>
                   <p>
-                    {gbp(item.price)} <span>guide price</span>
+                    <PriceValue
+                      amount={item.price}
+                      ready={pricesReady}
+                      error={priceError}
+                    />{" "}
+                    <span>guide price</span>
                   </p>
                   <div className="item-counter">
                     <button
                       type="button"
                       aria-label={`Remove ${item.title}`}
-                      disabled={qty === 0 || !draft}
+                      disabled={qty === 0 || !draft || !pricesReady}
                       onClick={() => modify(item.key, -1)}
                     >
                       <Minus size={16} />
@@ -178,7 +181,7 @@ function ItemsContent() {
                     <button
                       type="button"
                       aria-label={`Add ${item.title}`}
-                      disabled={!draft || qty >= 20}
+                      disabled={!draft || !pricesReady || qty >= 20}
                       onClick={() => modify(item.key, 1)}
                     >
                       <Plus size={16} />
@@ -221,11 +224,15 @@ function ItemsContent() {
                     {catalog.find((item) => item.key === row.key)?.title}
                   </span>
                   <strong>
-                    {gbp(
-                      row.qty *
+                    <PriceValue
+                      amount={
+                        row.qty *
                         (catalog.find((item) => item.key === row.key)?.price ||
-                          0),
-                    )}
+                          0)
+                      }
+                      ready={pricesReady}
+                      error={priceError}
+                    />
                   </strong>
                 </div>
               ))}
@@ -233,7 +240,13 @@ function ItemsContent() {
           )}
           <div className="items-basket-total">
             <span>Guide subtotal</span>
-            <strong>{gbp(total)}</strong>
+            <strong>
+              <PriceValue
+                amount={total}
+                ready={pricesReady}
+                error={priceError}
+              />
+            </strong>
           </div>
           <p className="items-price-note">
             Area, access charges and applicable VAT are checked with your
@@ -242,7 +255,7 @@ function ItemsContent() {
           <button
             type="button"
             className="btn btn-primary"
-            disabled={!count}
+            disabled={!count || !pricesReady}
             onClick={() => {
               if (!count) return toast.error("Add at least one item");
               saveDraft(draft!);

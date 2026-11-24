@@ -9,7 +9,7 @@ export const postcode = z
     "Enter a valid UK postcode",
   );
 export const addressSchema = z.object({
-  line1: z.string().trim().min(4).max(180),
+  line1: z.string().trim().min(4).max(500),
   city: z.string().trim().min(2).max(100),
   postcode,
   notes: z.string().max(500).optional().default(""),
@@ -18,7 +18,7 @@ const optionalQuoteAddress = z.object({
   line1: z
     .string()
     .trim()
-    .max(180)
+    .max(500)
     .refine(
       (value) => !value || value.length >= 4,
       "Enter a full street address",

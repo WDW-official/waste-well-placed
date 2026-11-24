@@ -3,7 +3,6 @@ import { getSession } from "@/lib/auth";
 import { connectDB } from "@/lib/db";
 import { Quote, Booking, Slot, Hold } from "@/lib/models";
 import { addressSchema } from "@/lib/validation";
-import { findZone } from "@/lib/coverage";
 import { objectId } from "@/lib/operations/validation";
 import { hashToken, requireCondition } from "@/lib/operations/security";
 import { audit, notifyStaff } from "@/lib/operations/events";
@@ -105,13 +104,10 @@ export async function POST(
         quote.vatMinor !== undefined,
       "Quotation has no approved price",
     );
-    const zone = await findZone(data.address.postcode);
-    requireCondition(zone, "This postcode is outside the service area");
     const db = await connectDB();
     const booking = await db.connection.transaction(async (session) => {
       const slot = await Slot.findOne({
         _id: data.slotId,
-        zoneId: zone._id,
         active: true,
         start: { $gt: new Date() },
       }).session(session);

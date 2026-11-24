@@ -17,8 +17,8 @@ export default function Areas() {
       setResult(
         r.ok
           ? j.covered
-            ? `Good news! Your postcode is within ${j.zone}. You can start a booking.`
-            : "We do not currently have a confirmed collection zone for that postcode. Please contact us."
+            ? `We collect at ${j.location.postcode}. You can start a booking and choose an available collection time.`
+            : "Check your UK postcode and try again."
           : j.error || "Unable to check right now",
       );
     } catch {
@@ -29,8 +29,8 @@ export default function Areas() {
   return (
     <>
       <PageTitle
-        title="Check our UK coverage"
-        desc="Availability is based on configured service zones, not assumed nationwide coverage."
+        title="We cover all UK postcodes"
+        desc="Check your postcode, then choose an available collection time when you book."
       />
       <div className="container section max-w-xl">
         <label className="label" htmlFor="postcode">

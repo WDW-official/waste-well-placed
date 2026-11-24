@@ -5,7 +5,6 @@ import { Booking, Payment, Slot } from "@/lib/models";
 import { Assignment, Payout } from "@/lib/operations/models";
 import { BookingChange, RefundRequest } from "@/lib/workflow-models";
 import { connectDB } from "@/lib/db";
-import { findZone } from "@/lib/coverage";
 import { requireUser, requireCondition } from "@/lib/operations/security";
 import { permitted } from "@/lib/operations/policy";
 import { objectId, pence } from "@/lib/operations/validation";
@@ -229,12 +228,9 @@ export async function POST(
             String(booking.slotId) !== data.slotId,
             "Choose a different slot",
           );
-          const zone = await findZone(booking.address?.postcode ?? "");
-          requireCondition(zone, "Collection area no longer available");
           const target = await Slot.findOneAndUpdate(
             {
               _id: data.slotId,
-              zoneId: zone._id,
               active: true,
               start: { $gt: new Date() },
               $expr: { $lt: ["$reservedCount", "$capacity"] },

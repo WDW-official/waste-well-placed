@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "seed": "tsx scripts/seed.ts",
+    "generate:slots": "tsx scripts/generate-slots.ts",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "migrate:platform": "tsx scripts/migrate-platform.ts",

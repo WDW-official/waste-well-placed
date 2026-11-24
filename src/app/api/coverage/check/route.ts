@@ -1,5 +1,4 @@
 import { postcode } from "@/lib/validation";
-import { findZone } from "@/lib/coverage";
 import { lookupPostcode, PostcodeLookupError } from "@/lib/postcodes";
 import { ok, errorResponse, fail, ensureSameOrigin } from "@/lib/http";
 import { z } from "zod";
@@ -9,11 +8,10 @@ export async function POST(req: Request) {
   try {
     const { postcode: code } = z.object({ postcode }).parse(await req.json());
     const location = await lookupPostcode(code);
-    const zone = await findZone(location.postcode);
     return ok({
-      covered: !!zone,
-      zone: zone?.name || null,
-      zoneId: zone ? String(zone._id) : null,
+      covered: true,
+      zone: "UK-wide collections",
+      zoneId: null,
       location,
     });
   } catch (error) {

@@ -45,7 +45,10 @@ export const adminRecordSchemas = {
     .strict(),
   slots: z
     .object({
-      zoneId: z.string().regex(/^[a-f\d]{24}$/i),
+      zoneId: z
+        .string()
+        .regex(/^[a-f\d]{24}$/i)
+        .optional(),
       start: z.coerce.date(),
       end: z.coerce.date(),
       capacity: z.number().int().min(1).max(1000),

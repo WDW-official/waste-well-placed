@@ -27,9 +27,21 @@ The existing Next.js / React / TypeScript, MongoDB / Mongoose, Cloudinary, Strip
 
 ## Configuration
 
+### Collection availability and current prices
+
+Slots can be managed under Admin → Slots. `npm run generate:slots` creates the next 14 days of national availability, Monday–Saturday, with 09:00–11:00, 11:00–13:00, 13:00–15:00 and 15:00–17:00 London-time windows and capacity three. It preserves existing overlapping windows, reservations and inactive slots. Run it only against the intended application database; it creates bookable availability. It does not run automatically.
+
+Customer item and load selectors fetch the admin price book without caching and refresh when the page regains focus or becomes visible. Only price amounts show skeleton placeholders during loading; collection cards and illustrations remain visible. Lookup errors show a retry action rather than fallback guide prices. New quotes and bookings calculate prices on the server; existing confirmed bookings retain their agreed prices.
+
+### UK-wide postcode and address lookup
+
+All valid UK postcodes are accepted. Configured areas are optional pricing/schedule groups, not a postcode whitelist. Collection slots are available nationally, including slots created without an area; real availability and capacity checks still apply. Do not create artificial availability to enable postcode acceptance.
+
+Postcode lookup uses Postcodes.io without an API key. It fills the verified postcode and administrative district in the editable town / city / area field when available. Customers check that area and enter their house number and street themselves. Postcodes.io does not provide individual street addresses. If lookup is unavailable, customers can enter their address manually.
+
 Retain existing database, Stripe, Cloudinary and Resend variables. MongoDB must be a replica set / Atlas deployment supporting transactions. Do not point integration tests at the application database.
 
-If login works locally but fails on Vercel, verify `MONGODB_URI` and `SESSION_SECRET` in the project's Production environment. The database URI must point to the database containing the account, and the session secret must contain at least 32 characters. Local `.env` values do not configure the deployed app. Redeploy after updating environment variables. Missing login configuration returns HTTP 503 and logs the invalid variable names without their values. Other unexpected login failures log the failing stage and error type without credentials or connection strings. Failed initial MongoDB connections are cleared from the cache so a later request can retry.
+If login works locally but fails on Vercel, verify `MONGODB_URI` and `SESSION_SECRET` in the project's Production environment. The database URI must point to the database containing the account, and the session secret must contain at least 32 characters. Local `.env` values do not configure the deployed app. Redeploy after updating environment variables. Missing login configuration returns HTTP 503 and logs the invalid variable names without their values. Other unexpected login failures log the failing stage and error type without credentials or connection strings. Failed initial MongoDB connections are cleared from the cache so a later request can retry. Failed OS hostname resolution for public Atlas hosts retries using direct DNS resolution through the configured resolver. Other hosts retain normal resolution. TLS and hostname verification remain enabled. Database connection outages return sanitized HTTP 503 responses.
 
 If uploads report Cloudinary `Invalid Signature` or authentication HTTP 401, replace `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` and `CLOUDINARY_API_SECRET` with matching credentials from the same Cloudinary product environment. Use the API secret, not the API key or a delivery signing key. Restart the development server after updating `.env`; update deployment environment variables and redeploy for production. The SDK generates upload signatures automatically; keep uploads authenticated. Credential failures return HTTP 503 to the app and a configuration diagnostic in server logs.
 

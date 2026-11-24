@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCurrentEstimate } from "@/components/use-current-estimate";
 import { BookingShell } from "@/components/booking-shell";
 import {
   loadDraft,
@@ -19,6 +20,7 @@ export default function Schedule() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const router = useRouter();
+  const price = useCurrentEstimate(setD);
   useEffect(() => {
     const x = loadDraft();
     setD(x);
@@ -133,12 +135,22 @@ export default function Schedule() {
             {d.estimate ? gbp(d.estimate.totalMinor) : "—"}
           </p>
           <p className="muted text-sm">
-            Calculated from the current example tariffs. Revalidated by the
-            server at booking.
+            Calculated from the current price book. Revalidated by the server at
+            booking.
           </p>
+          {price.checking && (
+            <p role="status" className="muted">
+              Checking current price…
+            </p>
+          )}
+          {price.error && (
+            <p role="alert" className="field-error">
+              {price.error} Refresh the page to try again.
+            </p>
+          )}
           <button
             className="btn btn-primary w-full mt-6"
-            disabled={busy || !chosen}
+            disabled={busy || !chosen || price.checking || !!price.error}
             onClick={proceed}
           >
             {busy ? "Reserving…" : "Reserve slot"}

@@ -1,4 +1,5 @@
 "use client";
+import { AddressLookup } from "@/components/address-lookup";
 import { PhoneInput } from "@/components/phone-input";
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -176,9 +177,7 @@ export default function Details() {
         location: { postcode: string };
       }>("/api/coverage/check", { postcode: draft.address!.postcode });
       if (!coverage.covered)
-        throw new Error(
-          "We can’t confirm coverage for this postcode yet. Contact our team for a personalised quote.",
-        );
+        throw new Error("Check your UK postcode and try again.");
       const code = coverage.location.postcode;
       const body = {
         kind: draft.kind,
@@ -368,6 +367,41 @@ export default function Details() {
                         <p className="quote-intro">
                           Add the full collection address.
                         </p>
+                        <AddressLookup
+                          id="postcode"
+                          value={draft.address?.postcode || ""}
+                          manualInputId="line1"
+                          onPostcodeChange={(value) => {
+                            const changed =
+                              value.replace(/\s/g, "").toUpperCase() !==
+                              (draft.address?.postcode || "")
+                                .replace(/\s/g, "")
+                                .toUpperCase();
+                            setComplete((done) =>
+                              done.filter((item) => item !== 1),
+                            );
+                            update({
+                              address: {
+                                ...draft.address!,
+                                postcode: value,
+                                ...(changed ? { line1: "", city: "" } : {}),
+                              },
+                            });
+                          }}
+                          onSelect={(selected) => {
+                            setComplete((done) =>
+                              done.filter((item) => item !== 1),
+                            );
+                            update({
+                              postcode: selected.postcode,
+                              address: {
+                                ...draft.address!,
+                                city: selected.city,
+                                postcode: selected.postcode,
+                              },
+                            });
+                          }}
+                        />
                         <div className="form-grid">
                           <div className="md:col-span-2">
                             <label className="label" htmlFor="line1">
@@ -378,7 +412,7 @@ export default function Details() {
                               className="input"
                               required
                               minLength={4}
-                              maxLength={180}
+                              maxLength={500}
                               autoComplete="street-address"
                               value={draft.address?.line1 || ""}
                               onChange={(e) => address("line1", e.target.value)}
@@ -387,7 +421,7 @@ export default function Details() {
                           </div>
                           <div>
                             <label className="label" htmlFor="city">
-                              Town / city
+                              Town / city / area
                             </label>
                             <input
                               id="city"
@@ -399,23 +433,6 @@ export default function Details() {
                               value={draft.address?.city || ""}
                               onChange={(e) => address("city", e.target.value)}
                               placeholder="Town or city"
-                            />
-                          </div>
-                          <div>
-                            <label className="label" htmlFor="postcode">
-                              UK postcode
-                            </label>
-                            <input
-                              id="postcode"
-                              required
-                              maxLength={10}
-                              className="input"
-                              autoComplete="postal-code"
-                              value={draft.address?.postcode || ""}
-                              onChange={(e) =>
-                                address("postcode", e.target.value)
-                              }
-                              placeholder="SW1A 1AA"
                             />
                           </div>
                           <div className="md:col-span-2">

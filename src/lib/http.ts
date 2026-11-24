@@ -7,6 +7,18 @@ export function fail(message: string, status = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 export function errorResponse(e: unknown) {
+  if (
+    e instanceof Error &&
+    [
+      "MongooseServerSelectionError",
+      "MongoServerSelectionError",
+      "MongoNetworkError",
+      "MongoNetworkTimeoutError",
+    ].includes(e.name)
+  ) {
+    console.error("Database connection unavailable:", { type: e.name });
+    return fail("Service is temporarily unavailable. Please try again.", 503);
+  }
   if (e instanceof Error && "status" in e && typeof e.status === "number")
     return fail(e.message, e.status);
   if (e instanceof ZodError)

@@ -97,7 +97,8 @@ export async function PATCH(req: Request) {
         "reservedCount",
       ])
         delete value[field];
-      if (name === "slots") value.zoneId = String(value.zoneId);
+      if (name === "slots" && value.zoneId != null)
+        value.zoneId = String(value.zoneId);
       schema.parse(value);
     }
     const validatedPatch =

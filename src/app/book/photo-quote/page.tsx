@@ -1,4 +1,5 @@
 "use client";
+import { AddressLookup } from "@/components/address-lookup";
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -415,6 +416,31 @@ export default function PhotoQuote() {
                     />
                   </div>
                   <div className="md:col-span-2">
+                    <AddressLookup
+                      id="quote-postcode"
+                      required={false}
+                      value={form.postcode}
+                      manualInputId="quote-street"
+                      onPostcodeChange={(value) =>
+                        setForm((current) => ({
+                          ...current,
+                          postcode: value,
+                          ...(value.replace(/\s/g, "").toUpperCase() !==
+                          current.postcode.replace(/\s/g, "").toUpperCase()
+                            ? { line1: "", city: "" }
+                            : {}),
+                        }))
+                      }
+                      onSelect={(selected) =>
+                        setForm((current) => ({
+                          ...current,
+                          city: selected.city,
+                          postcode: selected.postcode,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="md:col-span-2">
                     <label className="request-label" htmlFor="quote-street">
                       Collection address
                     </label>
@@ -423,7 +449,7 @@ export default function PhotoQuote() {
                       id="quote-street"
                       autoComplete="street-address"
                       minLength={4}
-                      maxLength={180}
+                      maxLength={500}
                       placeholder="House number and street"
                       value={form.line1}
                       onChange={(e) => update("line1", e.target.value)}
@@ -431,7 +457,7 @@ export default function PhotoQuote() {
                   </div>
                   <div>
                     <label className="request-label" htmlFor="quote-city">
-                      Town / city
+                      Town / city / area
                     </label>
                     <input
                       className="input"
@@ -441,20 +467,6 @@ export default function PhotoQuote() {
                       maxLength={100}
                       value={form.city}
                       onChange={(e) => update("city", e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="request-label" htmlFor="quote-postcode">
-                      UK postcode
-                    </label>
-                    <input
-                      className="input"
-                      id="quote-postcode"
-                      autoComplete="postal-code"
-                      maxLength={10}
-                      placeholder="e.g. SW1A 1AA"
-                      value={form.postcode}
-                      onChange={(e) => update("postcode", e.target.value)}
                     />
                   </div>
                   <div className="md:col-span-2">

@@ -92,12 +92,12 @@ export const adminLinks: AdminLink[] = [
     group: "Manage",
     permissions: ["operations"],
   },
-  // {
-  //   name: "Slots",
-  //   href: "/admin/slots",
-  //   group: "Manage",
-  //   permissions: ["operations"],
-  // },
+  {
+    name: "Slots",
+    href: "/admin/slots",
+    group: "Manage",
+    permissions: ["operations"],
+  },
   // {
   //   name: "Areas",
   //   href: "/admin/areas",

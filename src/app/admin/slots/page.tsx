@@ -4,7 +4,7 @@ export default function Page() {
     <AdminResource
       title="Appointment slots"
       name="slots"
-      fields={["zoneId", "start", "capacity", "reservedCount", "active"]}
+      fields={["start", "end", "capacity", "reservedCount", "active"]}
       editable={true}
     />
   );

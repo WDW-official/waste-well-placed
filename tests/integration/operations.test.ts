@@ -83,6 +83,8 @@ import { GET as privateAsset } from "@/app/api/assets/[id]/route";
 import { PATCH as reviewDriver } from "@/app/api/admin/drivers/[id]/route";
 import { POST as settle } from "@/app/api/operations/payouts/[id]/route";
 import { POST as createBooking } from "@/app/api/bookings/route";
+import { GET as publicLoadPrices } from "@/app/api/catalog/loads/route";
+import { GET as publicItemPrices } from "@/app/api/catalog/items/route";
 import { POST as registerDriver } from "@/app/api/driver/register/route";
 import { POST as driverAccess } from "@/app/api/driver/access/route";
 import { POST as requestDriverAccess } from "@/app/api/driver/request-access/route";
@@ -110,7 +112,12 @@ import { processRefunds } from "@/lib/refunds";
 import { GET as report } from "@/app/api/business/reports/route";
 import { POST as onboardBusiness } from "@/app/api/operations/organizations/route";
 import { PATCH as editAdminRecord } from "@/app/api/admin/record/route";
-import { GET as adminCollections } from "@/app/api/admin/collections/route";
+import {
+  GET as adminCollections,
+  POST as createAdminRecord,
+} from "@/app/api/admin/collections/route";
+import { GET as availableSlots } from "@/app/api/slots/route";
+import { POST as estimateQuote } from "@/app/api/quotes/estimate/route";
 let replica: MongoMemoryReplSet;
 let driverId: string;
 let bookingId: string;
@@ -311,6 +318,22 @@ describe("admin record actions", () => {
         )
       ).status,
     ).toBe(200);
+    const loadResponse = await publicLoadPrices();
+    expect(loadResponse.headers.get("Cache-Control")).toBe("no-store");
+    expect(
+      (await loadResponse.json()).loads.find(
+        (row: { key: string }) => row.key === "garden-quarter",
+      ).base,
+    ).toBe(17950);
+    const itemResponse = await publicItemPrices(
+      new Request("https://example.test/api/catalog/items"),
+    );
+    expect(itemResponse.headers.get("Cache-Control")).toBe("no-store");
+    expect(
+      (await itemResponse.json()).items.find(
+        (row: { key: string }) => row.key === "chair",
+      ).price,
+    ).toBe(9450);
     const base = {
       postcode: "SW1A 1AA",
       stairs: false,
@@ -866,6 +889,63 @@ describe("Stripe event idempotency", () => {
     expect((await webhook(req())).status).toBe(200);
     expect((await Booking.findById(bookingId))?.refundsMinor).toBe(12000);
     expect(await Audit.countDocuments({ action: "payment.refunded" })).toBe(1);
+  });
+});
+
+describe("UK-wide collection booking", () => {
+  it("creates a global slot and quotes/books outside any configured area without bypassing capacity", async () => {
+    expect(await Zone.countDocuments()).toBe(0);
+    const start = new Date(Date.now() + 2 * 86400_000);
+    const created = await createAdminRecord(
+      request({
+        name: "slots",
+        record: {
+          start: start.toISOString(),
+          end: new Date(start.getTime() + 3600_000).toISOString(),
+          capacity: 1,
+          active: true,
+        },
+      }),
+    );
+    expect(created.status).toBe(201);
+    const slotId = (await created.json()).id;
+    for (const postcode of ["SW1A 1AA", "M1 1AE", "EH1 1YZ", "BT1 5GS"]) {
+      const result = await availableSlots(
+        new Request(
+          `https://example.test/api/slots?postcode=${encodeURIComponent(postcode)}&date=${start.toISOString().slice(0, 10)}`,
+        ),
+      );
+      expect(
+        (await result.json()).slots.map((slot: { id: string }) => slot.id),
+      ).toContain(slotId);
+    }
+    const customer = await User.findOne({ role: "customer" });
+    actor.id = String(customer!._id);
+    actor.role = "customer";
+    const estimate = await estimateQuote(
+      request({ kind: "load", loadKey: "mini", postcode: "M1 1AE" }),
+    );
+    expect(estimate.status).toBe(200);
+    const held = await reserveSlot(request({ slotId }));
+    expect(held.status).toBe(201);
+    const holdId = (await held.json()).holdId;
+    const booking = await createBooking(
+      request({
+        kind: "load",
+        loadKey: "mini",
+        postcode: "M1 1AE",
+        address: {
+          line1: "10 Example Street",
+          city: "Manchester",
+          postcode: "M1 1AE",
+        },
+        slotId,
+        holdId,
+        idempotencyKey: crypto.randomUUID(),
+      }),
+    );
+    expect(booking.status).toBe(201);
+    expect((await reserveSlot(request({ slotId }))).status).toBe(409);
   });
 });
 

@@ -105,6 +105,7 @@ export async function POST(req: Request) {
     const validated = adminRecordSchemas[name].parse(record);
     if (
       name === "slots" &&
+      (validated as { zoneId?: string }).zoneId &&
       !(await Zone.exists({ _id: (validated as { zoneId: string }).zoneId }))
     )
       return fail("Service area not found", 422);

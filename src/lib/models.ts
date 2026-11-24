@@ -91,7 +91,7 @@ const ZoneSchema = new Schema(
 );
 const SlotSchema = new Schema(
   {
-    zoneId: { type: Schema.Types.ObjectId, ref: "Zone", required: true },
+    zoneId: { type: Schema.Types.ObjectId, ref: "Zone" },
     start: { type: Date, required: true },
     end: Date,
     capacity: { type: Number, default: 3 },

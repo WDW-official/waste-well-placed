@@ -173,6 +173,12 @@ async function main() {
     browser = await chromium.launch({ headless: true });
     const scenarios = [
       { path: "/", role: "public", userId: "" },
+      { path: "/book/details", role: "public", userId: "" },
+      { path: "/book/load", role: "public", userId: "" },
+      { path: "/book/items", role: "public", userId: "" },
+      { path: "/book/schedule", role: "public", userId: "" },
+      { path: "/book/checkout", role: "public", userId: "" },
+      { path: "/book/photo-quote", role: "public", userId: "" },
       { path: "/forgot-password", role: "public", userId: "" },
       {
         path: "/reset-password?token=" + "a".repeat(64),
@@ -235,6 +241,123 @@ async function main() {
           ]);
         }
         const page = await context.newPage();
+        let displayedPrice = 12345;
+        let releaseInitialPrices = () => {};
+        const initialPrices = new Promise<void>((done) => {
+          releaseInitialPrices = done;
+        });
+        let failPrices = false;
+        const selectionPricePage = ["/book/load", "/book/items"].includes(
+          scenario.path,
+        );
+        const pricePage = [
+          "/book/load",
+          "/book/items",
+          "/book/schedule",
+          "/book/checkout",
+        ].includes(scenario.path);
+        if (["/book/load", "/book/items"].includes(scenario.path)) {
+          const kind = scenario.path === "/book/load" ? "loads" : "items";
+          await page.route(`**/api/catalog/${kind}`, async (route) => {
+            await initialPrices;
+            if (failPrices)
+              return route.fulfill({
+                status: 503,
+                json: {
+                  error:
+                    "Service is temporarily unavailable. Please try again.",
+                },
+              });
+            const response = await route.fetch();
+            const data = await response.json();
+            for (const row of data[kind])
+              row[kind === "loads" ? "base" : "price"] = displayedPrice;
+            await route.fulfill({ json: data });
+          });
+        }
+        if (["/book/schedule", "/book/checkout"].includes(scenario.path)) {
+          await context.addInitScript(() =>
+            localStorage.setItem(
+              "wwp_draft",
+              JSON.stringify({
+                kind: "load",
+                loadKey: "mini",
+                selected: true,
+                postcode: "SW1A 1AA",
+                stairs: false,
+                longCarry: false,
+                specialHandling: false,
+                address: {
+                  line1: "10 Example Street",
+                  city: "London",
+                  postcode: "SW1A 1AA",
+                  notes: "",
+                },
+              }),
+            ),
+          );
+          await page.route("**/api/quotes/estimate", (route) =>
+            route.fulfill({
+              json: {
+                estimate: {
+                  subtotalMinor: displayedPrice,
+                  surchargeMinor: 0,
+                  vatMinor: 0,
+                  totalMinor: displayedPrice,
+                  lines: [
+                    { title: "Mini load", qty: 1, unitMinor: displayedPrice },
+                  ],
+                },
+              },
+            }),
+          );
+        }
+        const addressPage = ["/book/details", "/book/photo-quote"].includes(
+          scenario.path,
+        );
+        if (addressPage) {
+          await context.addInitScript(() =>
+            localStorage.setItem(
+              "wwp_draft",
+              JSON.stringify({
+                kind: "load",
+                loadKey: "mini",
+                selected: true,
+                postcode: "SW1A 1AA",
+                stairs: false,
+                longCarry: false,
+                specialHandling: false,
+                contact: {
+                  name: "Test Customer",
+                  email: "customer@example.test",
+                  phone: "+447700900123",
+                  business: false,
+                  whatsapp: false,
+                },
+              }),
+            ),
+          );
+          await page.route("**/api/postcodes/lookup?**", (route) => {
+            const code = new URL(route.request().url()).searchParams
+              .get("postcode")
+              ?.replace(/\s/g, "")
+              .toUpperCase();
+            if (code === "B11BB")
+              return route.fulfill({
+                status: 503,
+                json: {
+                  error:
+                    "Postcode lookup is temporarily unavailable. Please try again shortly.",
+                },
+              });
+            return route.fulfill({
+              json: {
+                postcode: code === "SW1A1AA" ? "SW1A 1AA" : "M1 1AE",
+                district: code === "SW1A1AA" ? "Westminster" : "Manchester",
+              },
+            });
+          });
+        }
         const tablePage = [
           "/admin/catalog",
           "/admin/content",
@@ -303,6 +426,137 @@ async function main() {
             .waitFor();
         }
         await page.waitForTimeout(500);
+        if (selectionPricePage) {
+          await page
+            .getByRole("status", { name: "Loading price", exact: true })
+            .first()
+            .waitFor();
+          const cards = page.locator(
+            scenario.path === "/book/load" ? ".load-card" : ".item-card",
+          );
+          if (!(await cards.count()))
+            throw Error("Selection cards disappeared during price loading");
+          await page.screenshot({
+            path: resolve(
+              output,
+              `${width}-${scenario.path.replace(/[^a-z0-9]/gi, "_")}-price-loading.png`,
+            ),
+          });
+          releaseInitialPrices();
+        }
+        if (pricePage) {
+          await page
+            .getByText(/£123\.45/)
+            .first()
+            .waitFor();
+          displayedPrice = 23456;
+          await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+          await page
+            .getByText(/£234\.56/)
+            .first()
+            .waitFor();
+          if (await page.getByText(/£123\.45/).count())
+            throw Error("Outdated price remained after refreshing");
+        }
+        if (selectionPricePage) {
+          failPrices = true;
+          await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+          await page
+            .getByRole("alert")
+            .filter({ hasText: "Prices are temporarily unavailable" })
+            .waitFor();
+          if (
+            !(await page
+              .locator(
+                scenario.path === "/book/load" ? ".load-card" : ".item-card",
+              )
+              .count())
+          )
+            throw Error("Cards disappeared after price lookup failed");
+          if (await page.getByText(/£234\.56/).count())
+            throw Error("Old prices remained after lookup failed");
+          await page.screenshot({
+            path: resolve(
+              output,
+              `${width}-${scenario.path.replace(/[^a-z0-9]/gi, "_")}-price-unavailable.png`,
+            ),
+          });
+          failPrices = false;
+          await page
+            .getByRole("button", { name: "Try again", exact: true })
+            .click();
+          await page
+            .getByText(/£234\.56/)
+            .first()
+            .waitFor();
+        }
+        if (addressPage) {
+          if (scenario.path === "/book/details")
+            await page
+              .getByRole("button", { name: "Next", exact: true })
+              .click();
+          else
+            await page
+              .getByRole("button", { name: /Add collection details/ })
+              .click();
+          const lookup = page.locator(".address-lookup");
+          const street = page.locator(
+            scenario.path === "/book/details" ? "#line1" : "#quote-street",
+          );
+          const city = page.locator(
+            scenario.path === "/book/details" ? "#city" : "#quote-city",
+          );
+          await street.fill("10 Example Street");
+          await lookup
+            .getByRole("button", { name: "Find area", exact: true })
+            .click();
+          await lookup.getByRole("status").waitFor();
+          if (
+            (await street.inputValue()) !== "10 Example Street" ||
+            (await city.inputValue()) !== "Westminster"
+          )
+            throw Error(
+              "Postcode lookup did not fill area or overwrote manual street",
+            );
+          await page.screenshot({
+            path: resolve(
+              output,
+              `${width}-${scenario.path.replace(/[^a-z0-9]/gi, "_")}-address-filled.png`,
+            ),
+          });
+          const postcode = lookup.getByRole("textbox", {
+            name: "UK postcode",
+            exact: true,
+          });
+          await postcode.fill("M11AE");
+          if ((await street.inputValue()) || (await city.inputValue()))
+            throw Error("Changing postcode retained the previous address");
+          await lookup
+            .getByRole("button", { name: "Find area", exact: true })
+            .click();
+          await lookup.getByRole("status").waitFor();
+          if ((await city.inputValue()) !== "Manchester")
+            throw Error("Address lookup failed for a postcode outside London");
+          await postcode.fill("B11BB");
+          await lookup
+            .getByRole("button", { name: "Find area", exact: true })
+            .click();
+          await lookup.getByRole("alert").waitFor();
+          await lookup
+            .getByRole("button", {
+              name: "Enter address manually",
+              exact: true,
+            })
+            .click();
+          if (
+            !(await street.evaluate(
+              (element) => element === document.activeElement,
+            ))
+          )
+            throw Error("Manual address entry did not receive focus");
+          await street.fill("100 Manual Road");
+          await city.fill("Birmingham");
+        }
         if (scenario.path.startsWith("/admin")) {
           await page.locator(".admin-workspace").waitFor();
           if (scenario.path === "/admin") {
@@ -364,7 +618,13 @@ async function main() {
               exact: true,
             });
             await mobileNav.locator("a").last().scrollIntoViewIfNeeded();
-            if (!(await mobileNav.evaluate((element) => element.scrollHeight <= element.clientHeight + 1 || element.scrollTop > 0)))
+            if (
+              !(await mobileNav.evaluate(
+                (element) =>
+                  element.scrollHeight <= element.clientHeight + 1 ||
+                  element.scrollTop > 0,
+              ))
+            )
               throw Error("Mobile sidebar does not scroll");
             await page
               .getByRole("button", { name: "Close navigation" })
@@ -418,7 +678,10 @@ async function main() {
             throw Error("Create modal overflows the viewport");
           if (scenario.path === "/admin/slots") {
             await create
-              .getByRole("combobox", { name: "Service area", exact: true })
+              .getByRole("combobox", {
+                name: "Schedule group (optional)",
+                exact: true,
+              })
               .click();
             await create
               .getByRole("option", { name: "UI modal area", exact: true })
